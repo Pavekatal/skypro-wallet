@@ -1,13 +1,14 @@
 import { useState } from "react";
 import Input from "../inputs/Input";
 import {
-  AuthFormContainer,
+  AuthButtonContainer,
   AuthFormLogin,
   AuthFormModal,
   AuthFormModalBlock,
   AuthFormModalTtl,
   SAuthForm,
 } from "./SAuthForm.styled";
+import Button from "../buttons/Button";
 
 const AuthForm = ({ isSignUp }) => {
   const [values, setValues] = useState({
@@ -39,46 +40,47 @@ const AuthForm = ({ isSignUp }) => {
         style={{ width: "100%", height: "64px", backgroundColor: "#FFFFFF" }}
       />
       <SAuthForm>
-        <AuthFormContainer>
-          <AuthFormModal>
-            <AuthFormModalBlock>
-              <AuthFormModalTtl>
-                <h2>{isSignUp ? "Регистрация" : "Вход"}</h2>
-              </AuthFormModalTtl>
-              <AuthFormLogin>
-                {isSignUp && (
-                  <Input
-                    id="formname"
-                    type="text"
-                    name="name"
-                    placeholder="Имя"
-                    value={values.name}
-                    statusInput={statusInputs.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                  />
-                )}
+        <AuthFormModal>
+          <AuthFormModalBlock>
+            <AuthFormModalTtl>
+              <h2>{isSignUp ? "Регистрация" : "Вход"}</h2>
+            </AuthFormModalTtl>
+            <AuthFormLogin>
+              {isSignUp && (
                 <Input
-                  id="formlogin"
+                  id="formname"
                   type="text"
-                  name="login"
-                  placeholder="Эл. почта"
-                  value={values.email}
-                  statusInput={statusInputs.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
+                  name="name"
+                  placeholder="Имя"
+                  value={values.name}
+                  statusInput={statusInputs.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
                 />
-                <Input
-                  id="formpassword"
-                  type="password"
-                  name="password"
-                  placeholder="Пароль"
-                  value={values.password}
-                  statusInput={statusInputs.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                />
-              </AuthFormLogin>
-            </AuthFormModalBlock>
-          </AuthFormModal>
-        </AuthFormContainer>
+              )}
+              <Input
+                id="formlogin"
+                type="text"
+                name="login"
+                placeholder="Эл. почта"
+                value={values.email}
+                statusInput={statusInputs.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+              />
+              <Input
+                id="formpassword"
+                type="password"
+                name="password"
+                placeholder="Пароль"
+                value={values.password}
+                statusInput={statusInputs.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+              />
+              <AuthButtonContainer>
+                <Button>{isSignUp ? "Зарегистрироваться" : "Войти"}</Button>
+              </AuthButtonContainer>
+            </AuthFormLogin>
+          </AuthFormModalBlock>
+        </AuthFormModal>
       </SAuthForm>
     </>
   );

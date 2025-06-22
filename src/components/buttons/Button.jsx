@@ -1,7 +1,7 @@
-import React from "react";
+import { SButton } from "./SButton.styled";
 
-const Button = () => {
-  return <div>Button</div>;
+const Button = ({ children }) => {
+  return <SButton $isActive={true}>{children}</SButton>;
 };
 
 export default Button;

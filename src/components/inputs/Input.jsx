@@ -1,4 +1,3 @@
-import React from "react";
 import { SInput } from "./SInput.styled";
 
 const Input = ({
