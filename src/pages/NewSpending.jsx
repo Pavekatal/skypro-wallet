@@ -1,10 +1,10 @@
 import React from "react";
 
-const SpendingPage = () => {
+const NewSpendingPage = () => {
   return (
     // вставить свой компонент
-    <div>SpendingPage</div>
+    <div>NewSpendingPage</div>
   );
 };
 
-export default SpendingPage;
+export default NewSpendingPage;

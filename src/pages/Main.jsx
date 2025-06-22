@@ -1,7 +1,12 @@
+import { Outlet } from "react-router-dom";
+
 const MainPage = () => {
   return (
-    // вставить свой компонент и составляющие главной страницы, напр., Header
-    <div>MainPage</div>
+    <>
+      // вставить свой компонент и составляющие главной страницы, напр., Header
+      <div>MainPage</div>
+      <Outlet />
+    </>
   );
 };
 
