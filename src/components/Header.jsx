@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 const HeaderWrapper = styled.header`
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   padding: 10px 20px;
   background: #fff;
@@ -35,7 +35,7 @@ const NavButton = styled(Link)`
 `;
 
 const LogoutButton = styled.button`
-  margin-left: auto;
+ 
   background: none;
   border: none;
   color: #000;
