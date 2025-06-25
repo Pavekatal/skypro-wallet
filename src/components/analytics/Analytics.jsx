@@ -18,7 +18,7 @@ ChartJS.register(
   Legend
 );
 
-const Analytics = () => {
+const Analytics = ({ period }) => {
   const data = {
     labels: ['Еда', 'Транспорт', 'Жилье', 'Развлечения', 'Образование', 'Другое'],
     datasets: [{
@@ -58,41 +58,66 @@ const Analytics = () => {
     },
     scales: {
       y: {
+        display: false, // Полностью скрываем ось Y (вертикальную полоску с расходами)
         beginAtZero: true,
-        ticks: {
-          callback: (value) => `${value} ₽`,
-        },
-        grid: {
-          drawBorder: false,
-        },
       },
       x: {
         grid: {
-          display: false,
+          display: false, // Убираем сетку по оси X
+        },
+        ticks: {
+          padding: 0, // Убираем отступы у подписей категорий
         },
       },
+    },
+    layout: {
+      padding: 0, // Убираем все отступы
     },
     animation: {
       duration: 1000,
     },
   };
 
-  // Кастомный плагин для отображения значений над колонками
   const showValuesPlugin = {
     id: 'showValues',
     afterDraw(chart) {
-      const { ctx, data, chartArea: { top, bottom, left, right, width, height }, scales: { x, y } } = chart;
-
+      if (!chart || !chart.ctx || !chart.data || !chart.chartArea) return;
+      
+      const ctx = chart.ctx;
+      const data = chart.data;
+      const chartArea = chart.chartArea;
+      
+      const top = chartArea.top || 0;
+      const bottom = chartArea.bottom || 0;
+      const left = chartArea.left || 0;
+      const right = chartArea.right || 0;
+      
+      if (!chart.scales || !chart.scales.x || !chart.scales.y) return;
+      
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillStyle = '#333';
-
-      data.datasets[0].data.forEach((value, index) => {
-        const xPos = x.getPixelForValue(index);
-        const yPos = y.getPixelForValue(value) - 5; // Отступ от верха колонки
-
-        ctx.fillText(`${value} ₽`, xPos, yPos);
+      
+      if (!data.datasets || data.datasets.length === 0) return;
+      
+      const dataset = data.datasets[0];
+      if (!dataset.data) return;
+      
+      dataset.data.forEach((value, index) => {
+        try {
+          const xPos = xScale.getPixelForValue(index);
+          const yPos = yScale.getPixelForValue(value) - 5;
+          
+          if (xPos >= left && xPos <= right && yPos >= top && yPos <= bottom) {
+            ctx.fillText(`${value} ₽`, xPos, yPos);
+          }
+        } catch (error) {
+          console.error('Error drawing value:', error);
+        }
       });
     }
   };
@@ -106,7 +131,6 @@ const Analytics = () => {
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       backgroundColor: 'white',
     }}>
-      {/* Заголовок */}
       <div style={{ marginBottom: '16px' }}>
         <div style={{ 
           fontSize: '24px', 
@@ -119,24 +143,23 @@ const Analytics = () => {
           color: '#666',
           fontSize: '14px'
         }}>
-          Расходы за 10 июля 2024
+          {period ? `Расходы за ${period}` : 'Выберите период в календаре'}
         </div>
       </div>
 
-      {/* Контейнер для диаграммы */}
       <div style={{ 
         height: 'calc(100% - 60px)',
         width: '100%',
         borderRadius: '12px',
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'white', // Убрал серый фон
         padding: '12px',
       }}>
         <Bar 
           data={data} 
           options={options} 
-          plugins={[showValuesPlugin]} // Подключаем плагин
+          plugins={[showValuesPlugin]}
         />
       </div>
     </div>

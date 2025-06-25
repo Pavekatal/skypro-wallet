@@ -1,23 +1,79 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
-const Calendar = () => {
+const Calendar = ({ onPeriodChange }) => {
   const [viewMode, setViewMode] = useState('month');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [startMonth, setStartMonth] = useState(null);
   const [endMonth, setEndMonth] = useState(null);
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day} ${getMonthName(month)} ${year}`;
+  };
+
+  const formatMonth = (monthKey) => {
+    if (!monthKey) return '';
+    const [year, month] = monthKey.split('-').map(Number);
+    return `${getMonthName(month, true)} ${year}`;
+  };
+
+  const getMonthName = (month, fullForm = false) => {
+    const monthNames = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+    const monthNamesFull = [
+      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ];
+    return fullForm ? monthNamesFull[month - 1] : monthNames[month - 1];
+  };
+
   const selectDay = (date) => {
+    let newStartDate = startDate;
+    let newEndDate = endDate;
+    
     if (!startDate || (startDate && endDate)) {
-      setStartDate(date);
-      setEndDate(null);
+      newStartDate = date;
+      newEndDate = null;
     } else {
       if (new Date(date) < new Date(startDate)) {
-        setEndDate(startDate);
-        setStartDate(date);
+        newEndDate = startDate;
+        newStartDate = date;
       } else {
-        setEndDate(date);
+        newEndDate = date;
+      }
+    }
+
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+    updatePeriodDisplay(newStartDate, newEndDate);
+  };
+
+  const updatePeriodDisplay = (start, end) => {
+    if (!onPeriodChange) return;
+    
+    if (viewMode === 'month') {
+      if (start && end) {
+        onPeriodChange(`${formatDate(start)} - ${formatDate(end)}`);
+      } else if (start) {
+        onPeriodChange(formatDate(start));
+      } else {
+        onPeriodChange('');
+      }
+    } else {
+      if (start && end) {
+        onPeriodChange(`${formatMonth(start)} - ${formatMonth(end)}`);
+      } else if (start) {
+        onPeriodChange(formatMonth(start));
+      } else {
+        onPeriodChange('');
       }
     }
   };
@@ -33,7 +89,7 @@ const Calendar = () => {
   };
 
   const selectMonth = (year, month) => {
-    const monthKey = `${year}-${month}`;
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
     
     if (!startMonth || (startMonth && endMonth)) {
       setStartMonth(monthKey);
@@ -47,16 +103,25 @@ const Calendar = () => {
         setEndMonth(monthKey);
       }
     }
+    
+    // Обновляем отображение периода
+    updatePeriodDisplay(
+      startMonth && endMonth ? null : startMonth || monthKey,
+      startMonth && !endMonth ? monthKey : null
+    );
   };
 
-  const isMonthSelected = (year, month) => 
-    `${year}-${month}` === startMonth || `${year}-${month}` === endMonth;
+  const isMonthSelected = (year, month) => {
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    return monthKey === startMonth || monthKey === endMonth;
+  };
   
   const isMonthInRange = (year, month) => {
     if (startMonth && endMonth) {
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
       const start = new Date(`${startMonth}-01`);
       const end = new Date(`${endMonth}-01`);
-      const current = new Date(`${year}-${String(month).padStart(2, '0')}-01`);
+      const current = new Date(`${monthKey}-01`);
       return current >= start && current <= end;
     }
     return false;
@@ -172,13 +237,19 @@ const Calendar = () => {
         <ViewToggle>
           <ToggleButton 
             $isActive={viewMode === 'month'} 
-            onClick={() => setViewMode('month')}
+            onClick={() => {
+              setViewMode('month');
+              updatePeriodDisplay(startDate, endDate);
+            }}
           >
             Месяц
           </ToggleButton>
           <ToggleButton 
             $isActive={viewMode === 'year'} 
-            onClick={() => setViewMode('year')}
+            onClick={() => {
+              setViewMode('year');
+              updatePeriodDisplay(startMonth, endMonth);
+            }}
           >
             Год
           </ToggleButton>
@@ -189,6 +260,7 @@ const Calendar = () => {
     </CalendarWrapper>
   );
 };
+
 
 const CalendarWrapper = styled.div`
   width: 320px;
