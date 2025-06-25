@@ -54,3 +54,23 @@ export const AuthButtonContainer = styled.div`
   width: 100%;
   margin-top: 24px;
 `;
+
+export const AuthFormGroup = styled.div`
+  text-align: center;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  p,
+  a {
+    color: rgb(153, 153, 153);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 150%;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+`;

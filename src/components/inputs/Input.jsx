@@ -8,8 +8,12 @@ const Input = ({
   error = false,
   statusInput = "default",
   autoFocus = true,
+  value = "",
   onChange,
+  showStar = false,
 }) => {
+  const shouldShowStar = showStar;
+
   return (
     <SInput
       type={type}
@@ -19,8 +23,10 @@ const Input = ({
       $error={error}
       onChange={onChange}
       autoFocus={autoFocus}
+      value={value}
       autoComplete="current-password"
       $statusInput={statusInput}
+      $showStar={shouldShowStar}
     />
   );
 };

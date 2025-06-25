@@ -4,6 +4,7 @@ export const SInput = styled.input`
   width: 100%;
   min-width: 100%;
   height: 39px;
+  position: relative;
   padding: 12px;
   outline: none;
   box-sizing: border-box;
@@ -18,7 +19,14 @@ export const SInput = styled.input`
     }
   }};
   border-radius: 6px;
-  color: inherit;
+  color: ${(props) => {
+    switch (props.$statusInput) {
+      case "error":
+        return "rgb(242, 80, 80)";
+      default:
+        return "inherit";
+    }
+  }};
   font-family: Montserrat;
   font-size: 12px;
   font-weight: 400;
