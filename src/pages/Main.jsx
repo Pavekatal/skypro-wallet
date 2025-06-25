@@ -6,9 +6,10 @@ import Header from '../components/Header';
 const Container = styled.div`
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 20px 0;
   background: #f5f5f5;
   min-height: 100vh;
+  width: 100%;
 `;
 
 const ContentWrapper = styled.div`
@@ -27,6 +28,18 @@ const TableSection = styled.div`
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 600px;
+  max-width: 70%;
+`;
+
+const FormSection = styled.div`
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  max-width: 30%;
 `;
 
 const Table = styled.table`
@@ -55,18 +68,21 @@ const TableCell = styled.td`
   transition: color 0.3s ease;
 `;
 
-const FormSection = styled.div`
-  flex: 1;
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+const MainTitle = styled.h2`
+  font-size: 36px; /* Twice the size of TableSection h2 (18px) */
+  text-align: left; /* Align left */
+  margin-bottom: 20px;
+  margin-top: 20px; /* Space after header */
+  margin-left: 20px; /* Offset from left edge */
+  font-family: 'Montserrat', sans-serif;
+  background: transparent; /* No background color */
 `;
 
 const FormTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 20px;
-  text-align: center;
+  text-align: left; /* Align left */
+  margin: 0 0 0 20px; /* Offset from left edge */
 `;
 
 const FormInput = styled.input`
@@ -76,7 +92,7 @@ const FormInput = styled.input`
   margin-bottom: 15px;
   border: 1px solid ${props => props.valid ? '#006400' : '#ddd'};
   border-radius: 4px;
-  background: ${props => props.valid ? '#90EE90' : 'transparent'};
+  background: ${props => (props.valid && props.editing) ? '#fff' : (props.valid ? '#90EE90' : 'transparent')};
   font-family: 'Montserrat', sans-serif;
   transition: all 0.3s ease;
 `;
@@ -89,12 +105,12 @@ const FormSelect = styled.select`
   border: 1px solid #ddd;
   border-radius: 4px;
   font-family: 'Montserrat', sans-serif;
-  background: ${props => props.selected ? '#00C853' : 'transparent'};
-  color: ${props => props.selected ? '#fff' : '#000'};
+  background: ${props => (props.selected && props.editing) ? '#fff' : (props.selected ? '#00C853' : 'transparent')};
+  color: ${props => (props.selected && props.editing) ? '#000' : (props.selected ? '#fff' : '#000')};
   &:after {
     content: ${props => props.selected ? '"✓"' : '""'};
     margin-left: 5px;
-    color: #fff;
+    color: ${props => (props.selected && props.editing) ? '#000' : '#fff'};
   }
 `;
 
@@ -161,14 +177,23 @@ const MainPage = () => {
   const [sortBy, setSortBy] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [editData, setEditData] = useState(null);
+  const [newExpense, setNewExpense] = useState({
+    description: '',
+    category: '',
+    date: '',
+    amount: ''
+  });
+  const [errors, setErrors] = useState({});
   const location = useLocation();
 
   useEffect(() => {
     if (location.state?.updatedExpense) {
       const updatedExpense = location.state.updatedExpense;
+      const dateParts = new Date(updatedExpense.date).toLocaleDateString('ru-RU').split('.');
+      const formattedDate = `${dateParts[0].padStart(2, '0')}.${dateParts[1].padStart(2, '0')}.${dateParts[2]}`;
       setExpenses(expenses.map(expense =>
         expense.id === parseInt(updatedExpense.id)
-          ? { ...expense, description: updatedExpense.description, category: updatedExpense.category, date: updatedExpense.date, amount: updatedExpense.amount + ' Р' }
+          ? { ...expense, description: updatedExpense.description, category: updatedExpense.category, date: formattedDate, amount: updatedExpense.amount + ' Р' }
           : expense
       ));
       setSelectedId(null);
@@ -176,7 +201,10 @@ const MainPage = () => {
       window.history.replaceState({}, document.title);
     }
     if (location.state?.newExpense) {
-      setExpenses([...expenses, location.state.newExpense]);
+      // Convert date to DD.MM.YYYY format
+      const dateParts = new Date(location.state.newExpense.date).toLocaleDateString('ru-RU').split('.');
+      const formattedDate = `${dateParts[0].padStart(2, '0')}.${dateParts[1].padStart(2, '0')}.${dateParts[2]}`;
+      setExpenses([...expenses, { ...location.state.newExpense, date: formattedDate, id: Date.now() }]);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -208,14 +236,22 @@ const MainPage = () => {
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
+    if (editData) {
+      setEditData({ ...editData, [name]: value });
+    } else {
+      setNewExpense({ ...newExpense, [name]: value });
+      setErrors({ ...errors, [name]: '' }); // Clear errors on change
+    }
   };
 
   const handleSaveEdit = () => {
     if (editData) {
+      // Convert date to DD.MM.YYYY format
+      const dateParts = new Date(editData.date).toLocaleDateString('ru-RU').split('.');
+      const formattedDate = `${dateParts[0].padStart(2, '0')}.${dateParts[1].padStart(2, '0')}.${dateParts[2]}`;
       const updatedExpenses = expenses.map(expense =>
         expense.id === editData.id
-          ? { ...expense, description: editData.description, category: editData.category, date: editData.date, amount: editData.amount + ' Р' }
+          ? { ...expense, description: editData.description, category: editData.category, date: formattedDate, amount: editData.amount + ' Р' }
           : expense
       );
       setExpenses(updatedExpenses);
@@ -224,92 +260,172 @@ const MainPage = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!newExpense.description.trim()) newErrors.description = 'Описание обязательно';
+    if (!newExpense.category) newErrors.category = 'Категория обязательна';
+    if (!newExpense.date) newErrors.date = 'Дата обязательна';
+    if (newExpense.amount && isNaN(newExpense.amount)) newErrors.amount = 'Сумма должна быть числом';
+    return newErrors;
+  };
+
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
+    if (Object.keys(newErrors).length === 0) {
+      const dateParts = new Date(newExpense.date).toLocaleDateString('ru-RU').split('.');
+      const formattedDate = `${dateParts[0].padStart(2, '0')}.${dateParts[1].padStart(2, '0')}.${dateParts[2]}`;
+      const newExpenseEntry = {
+        id: Date.now(),
+        description: newExpense.description,
+        category: newExpense.category,
+        date: formattedDate,
+        amount: `${newExpense.amount || 0} Р` 
+      };
+      setExpenses([...expenses, newExpenseEntry]);
+      setNewExpense({ description: '', category: '', date: '', amount: '' }); // Reset form
+      setErrors({});
+    } else {
+      setErrors(newErrors);
+    }
+  };
+
   const isValidInput = (value, field) => {
-    if (field === 'amount') return value && !isNaN(value) && parseInt(value) > 0;
+    if (field === 'amount') return !value || !isNaN(value); 
     return value.trim() !== '';
   };
 
   return (
     <>
       <Header currentPath="/" />
+      <MainTitle>Мои расходы</MainTitle>
       <Container>
         <ContentWrapper>
-         <TableSection>
-  <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Таблица расходов</h2>
-  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-    <FilterSelect
-      value={filterCategory}
-      onChange={(e) => setFilterCategory(e.target.value)}
-      selected={filterCategory !== ''}
-    >
-      <option value="">Фильтровать по категории</option>
-      <option value="Еда">Еда</option>
-      <option value="Транспорт">Транспорт</option>
-      <option value="Жилье">Жилье</option>
-      <option value="Развлечения">Развлечения</option>
-      <option value="Образование">Образование</option>
-      <option value="Другое">Другое</option>
-    </FilterSelect>
-    <SortSelect
-      value={sortBy}
-      onChange={(e) => setSortBy(e.target.value)}
-      selected={sortBy !== ''}
-    >
-      <option value="">Сортировать по</option>
-      <option value="date">По дате</option>
-      <option value="amount">По сумме</option>
-    </SortSelect>
-  </div>
-  <Table>
-    <thead>
-      <tr>
-        <TableHeader>Описание</TableHeader>
-        <TableHeader>Категория</TableHeader>
-        <TableHeader>Дата</TableHeader>
-        <TableHeader>Сумма</TableHeader>
-        <TableHeader>Действия</TableHeader>
-      </tr>
-    </thead>
-    <tbody>
-      {expenses
-        .filter(expense => !filterCategory || expense.category === filterCategory)
-        .sort((a, b) => {
-          if (sortBy === 'date') return new Date(a.date.split('.').reverse().join('-')) - new Date(b.date.split('.').reverse().join('-'));
-          if (sortBy === 'amount') return parseInt(a.amount.replace(' Р', '')) - parseInt(b.amount.replace(' Р', ''));
-          return 0;
-        })
-        .map(expense => (
-          <TableRow
-            key={expense.id}
-            selected={false}
-          >
-            <TableCell>{expense.description}</TableCell>
-            <TableCell>{expense.category}</TableCell>
-            <TableCell>{expense.date}</TableCell>
-            <TableCell>{expense.amount}</TableCell>
-            <TableCell>
-              <ActionIcons
-                role="img"
-                aria-label="edit"
-                onClick={() => window.location.href = `/spending/${expense.id}`}
+          <TableSection>
+            <h2 style={{ textAlign: 'left', marginBottom: '20px', marginLeft: '20px' }}>Таблица расходов</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', marginLeft: '20px', marginRight: '20px' }}>
+              <FilterSelect
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                selected={filterCategory !== ''}
               >
-                ✏️
-              </ActionIcons>
-              <ActionIcons
-                role="img"
-                aria-label="delete"
-                onClick={() => handleDelete(expense.id)}
+                <option value="">Фильтровать по категории</option>
+                <option value="Еда">Еда</option>
+                <option value="Транспорт">Транспорт</option>
+                <option value="Жилье">Жилье</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Образование">Образование</option>
+                <option value="Другое">Другое</option>
+              </FilterSelect>
+              <SortSelect
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                selected={sortBy !== ''}
               >
-                🗑️
-              </ActionIcons>
-            </TableCell>
-          </TableRow>
-        ))}
-    </tbody>
-  </Table>
-</TableSection>
+                <option value="">Сортировать по</option>
+                <option value="date">По дате</option>
+                <option value="amount">По сумме</option>
+              </SortSelect>
+            </div>
+            <Table>
+              <thead>
+                <tr>
+                  <TableHeader>Описание</TableHeader>
+                  <TableHeader>Категория</TableHeader>
+                  <TableHeader>Дата</TableHeader>
+                  <TableHeader>Сумма</TableHeader>
+                  <TableHeader>Действия</TableHeader>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses
+                  .filter(expense => !filterCategory || expense.category === filterCategory)
+                  .sort((a, b) => {
+                    if (sortBy === 'date') return new Date(a.date.split('.').reverse().join('-')) - new Date(b.date.split('.').reverse().join('-'));
+                    if (sortBy === 'amount') return parseInt(a.amount.replace(' Р', '')) - parseInt(b.amount.replace(' Р', ''));
+                    return 0;
+                  })
+                  .map(expense => (
+                    <TableRow
+                      key={expense.id}
+                      selected={selectedId === expense.id}
+                    >
+                      <TableCell selected={selectedId === expense.id}>{expense.description}</TableCell>
+                      <TableCell selected={selectedId === expense.id}>{expense.category}</TableCell>
+                      <TableCell selected={selectedId === expense.id}>{expense.date}</TableCell>
+                      <TableCell selected={selectedId === expense.id}>{expense.amount}</TableCell>
+                      <TableCell>
+                        <ActionIcons
+                          role="img"
+                          aria-label="edit"
+                          selected={selectedId === expense.id}
+                          onClick={() => handleEdit(expense)}
+                        >
+                          ✏️
+                        </ActionIcons>
+                        <ActionIcons
+                          role="img"
+                          aria-label="delete"
+                          selected={selectedId === expense.id}
+                          onClick={() => handleDelete(expense.id)}
+                        >
+                          🗑️
+                        </ActionIcons>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </tbody>
+            </Table>
+          </TableSection>
           <FormSection>
-            {editData ? (
+            {!editData && (
+              <>
+                <FormTitle>Новый расход</FormTitle>
+                <form onSubmit={handleAddExpense}>
+                  <FormInput
+                    name="description"
+                    value={newExpense.description}
+                    onChange={handleEditChange}
+                    placeholder="Введите описание"
+                    valid={isValidInput(newExpense.description, 'description')}
+                  />
+                  {errors.description && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.description}</p>}
+                  <FormSelect
+                    name="category"
+                    value={newExpense.category}
+                    onChange={handleEditChange}
+                    selected={newExpense.category !== ''}
+                  >
+                    <option value="">Выберите категорию</option>
+                    <option value="Еда">Еда</option>
+                    <option value="Транспорт">Транспорт</option>
+                    <option value="Жилье">Жилье</option>
+                    <option value="Развлечения">Развлечения</option>
+                    <option value="Образование">Образование</option>
+                    <option value="Другое">Другое</option>
+                  </FormSelect>
+                  {errors.category && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.category}</p>}
+                  <FormInput
+                    type="date"
+                    name="date"
+                    value={newExpense.date}
+                    onChange={handleEditChange}
+                    valid={isValidInput(newExpense.date, 'date')}
+                  />
+                  {errors.date && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.date}</p>}
+                  <FormInput
+                    name="amount"
+                    value={newExpense.amount}
+                    onChange={handleEditChange}
+                    placeholder="Введите сумму"
+                    valid={isValidInput(newExpense.amount, 'amount')}
+                  />
+                  {errors.amount && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.amount}</p>}
+                  <FormButton type="submit">Добавить новый расход</FormButton>
+                </form>
+              </>
+            )}
+            {editData && (
               <>
                 <FormTitle>Редактирование расхода</FormTitle>
                 <FormInput
@@ -318,12 +434,14 @@ const MainPage = () => {
                   onChange={handleEditChange}
                   placeholder="Введите описание"
                   valid={isValidInput(editData.description, 'description')}
+                  editing={true}
                 />
                 <FormSelect
                   name="category"
                   value={editData.category}
                   onChange={handleEditChange}
                   selected={editData.category !== ''}
+                  editing={true}
                 >
                   <option value="">Выберите категорию</option>
                   <option value="Еда">Еда</option>
@@ -339,6 +457,7 @@ const MainPage = () => {
                   value={editData.date}
                   onChange={handleEditChange}
                   valid={isValidInput(editData.date, 'date')}
+                  editing={true}
                 />
                 <FormInput
                   name="amount"
@@ -346,49 +465,10 @@ const MainPage = () => {
                   onChange={handleEditChange}
                   placeholder="Введите сумму"
                   valid={isValidInput(editData.amount, 'amount')}
+                  editing={true}
                 />
                 <FormButton onClick={handleSaveEdit}>Сохранить редактирование</FormButton>
                 <FormButton onClick={() => { setSelectedId(null); setEditData(null); }}>Отмена</FormButton>
-              </>
-            ) : (
-              <>
-                <FormTitle>Новый расход</FormTitle>
-                <FormInput
-                  name="description"
-                  placeholder="Введите описание"
-                  value=""
-                  onChange={handleEditChange}
-                  valid={false}
-                />
-                <FormSelect
-                  name="category"
-                  value=""
-                  onChange={handleEditChange}
-                  selected={false}
-                >
-                  <option value="">Выберите категорию</option>
-                  <option value="Еда">Еда</option>
-                  <option value="Транспорт">Транспорт</option>
-                  <option value="Жилье">Жилье</option>
-                  <option value="Развлечения">Развлечения</option>
-                  <option value="Образование">Образование</option>
-                  <option value="Другое">Другое</option>
-                </FormSelect>
-                <FormInput
-                  type="date"
-                  name="date"
-                  value=""
-                  onChange={handleEditChange}
-                  valid={false}
-                />
-                <FormInput
-                  name="amount"
-                  placeholder="Введите сумму"
-                  value=""
-                  onChange={handleEditChange}
-                  valid={false}
-                />
-                <FormButton onClick={() => window.location.href = '/spending/new'}>Добавить новый расход</FormButton>
               </>
             )}
           </FormSection>

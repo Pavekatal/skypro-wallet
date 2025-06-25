@@ -6,9 +6,10 @@ import Header from '../components/Header';
 const Container = styled.div`
   display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 20px 0; 
   background: #f5f5f5;
   min-height: 100vh;
+  width: 100%;
 `;
 
 const FormWrapper = styled.div`
@@ -18,12 +19,14 @@ const FormWrapper = styled.div`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
+  margin: 0 auto; 
 `;
 
 const FormTitle = styled.h3`
   font-size: 18px;
   margin-bottom: 20px;
   text-align: center;
+  margin: 0;
 `;
 
 const FormInput = styled.input`
@@ -33,7 +36,7 @@ const FormInput = styled.input`
   margin-bottom: 15px;
   border: 1px solid ${props => props.valid ? '#006400' : '#ddd'};
   border-radius: 4px;
-  background: ${props => props.valid ? '#fff' : 'transparent'}; 
+  background: ${props => props.valid ? '#fff' : 'transparent'};
   font-family: 'Montserrat', sans-serif;
   transition: all 0.3s ease;
 `;
