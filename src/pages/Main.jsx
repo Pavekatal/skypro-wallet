@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Header from '../components/Header';
 
@@ -43,11 +43,16 @@ const TableHeader = styled.th`
 
 const TableRow = styled.tr`
   &:nth-child(even) { background: #fafafa; }
+  &:hover { background: #90EE90; }
+  background: ${props => props.selected ? '#90EE90' : 'transparent'};
+  transition: background 0.3s ease;
 `;
 
 const TableCell = styled.td`
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  color: ${props => (props.selected || props.hovered) ? '#006400' : '#000'};
+  transition: color 0.3s ease;
 `;
 
 const FormSection = styled.div`
@@ -122,11 +127,14 @@ const FormButton = styled.button`
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   cursor: pointer;
+  margin-top: 10px;
 `;
 
 const ActionIcons = styled.span`
   margin: 0 5px;
   cursor: pointer;
+  color: ${props => (props.selected || props.hovered) ? '#006400' : '#000'};
+  transition: color 0.3s ease;
 `;
 
 const MainPage = () => {
@@ -144,22 +152,37 @@ const MainPage = () => {
     { id: 11, description: 'Яндекс Такси', category: 'Транспорт', date: '28.06.2024', amount: '320 Р' },
     { id: 12, description: 'Перекресток', category: 'Еда', date: '28.06.2024', amount: '1 360 Р' },
     { id: 13, description: 'Деливери', category: 'Еда', date: '28.06.2024', amount: '2 320 Р' },
-    { id: 14, description: 'Вкусвилл', category: 'Еда', date: '27.06.2024', amount: '1 220 Р' },
+    { id: 14, description: 'Вкусивли', category: 'Еда', date: '27.06.2024', amount: '1 220 Р' },
     { id: 15, description: 'Кофейня №1', category: 'Еда', date: '27.06.2024', amount: '920 Р' },
-    { id: 16, description: 'Вкусвилл', category: 'Еда', date: '26.06.2024', amount: '840 Р' },
+    { id: 16, description: 'Вкусивли', category: 'Еда', date: '26.06.2024', amount: '840 Р' },
     { id: 17, description: 'Кофейня №1', category: 'Еда', date: '26.06.2024', amount: '920 Р' },
   ]);
-   const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('');
-  const [formData, setFormData] = useState({
-    description: '',
-    category: '',
-    date: '',
-    amount: ''
-  });
+  const [selectedId, setSelectedId] = useState(null);
+  const [editData, setEditData] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
-    let filteredExpenses = [...expenses]; // Create a copy to avoid direct mutation
+    if (location.state?.updatedExpense) {
+      const updatedExpense = location.state.updatedExpense;
+      setExpenses(expenses.map(expense =>
+        expense.id === parseInt(updatedExpense.id)
+          ? { ...expense, description: updatedExpense.description, category: updatedExpense.category, date: updatedExpense.date, amount: updatedExpense.amount + ' Р' }
+          : expense
+      ));
+      setSelectedId(null);
+      setEditData(null);
+      window.history.replaceState({}, document.title);
+    }
+    if (location.state?.newExpense) {
+      setExpenses([...expenses, location.state.newExpense]);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    let filteredExpenses = [...expenses];
     if (filterCategory) {
       filteredExpenses = filteredExpenses.filter(expense => expense.category === filterCategory);
     }
@@ -168,16 +191,37 @@ const MainPage = () => {
     } else if (sortBy === 'amount') {
       filteredExpenses.sort((a, b) => parseInt(a.amount.replace(' Р', '')) - parseInt(b.amount.replace(' Р', '')));
     }
-    // No need to setExpenses here; use filteredExpenses for display
   }, [filterCategory, sortBy]);
 
   const handleDelete = (id) => {
     setExpenses(expenses.filter(expense => expense.id !== id));
+    if (selectedId === id) {
+      setSelectedId(null);
+      setEditData(null);
+    }
   };
 
-  const handleInputChange = (e) => {
+  const handleEdit = (expense) => {
+    setSelectedId(expense.id);
+    setEditData({ ...expense, amount: expense.amount.replace(' Р', '') });
+  };
+
+  const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setEditData({ ...editData, [name]: value });
+  };
+
+  const handleSaveEdit = () => {
+    if (editData) {
+      const updatedExpenses = expenses.map(expense =>
+        expense.id === editData.id
+          ? { ...expense, description: editData.description, category: editData.category, date: editData.date, amount: editData.amount + ' Р' }
+          : expense
+      );
+      setExpenses(updatedExpenses);
+      setSelectedId(null);
+      setEditData(null);
+    }
   };
 
   const isValidInput = (value, field) => {
@@ -190,103 +234,163 @@ const MainPage = () => {
       <Header currentPath="/" />
       <Container>
         <ContentWrapper>
-          <TableSection>
-            <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Таблица расходов</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <FilterSelect
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                selected={filterCategory !== ''}
+         <TableSection>
+  <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Таблица расходов</h2>
+  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+    <FilterSelect
+      value={filterCategory}
+      onChange={(e) => setFilterCategory(e.target.value)}
+      selected={filterCategory !== ''}
+    >
+      <option value="">Фильтровать по категории</option>
+      <option value="Еда">Еда</option>
+      <option value="Транспорт">Транспорт</option>
+      <option value="Жилье">Жилье</option>
+      <option value="Развлечения">Развлечения</option>
+      <option value="Образование">Образование</option>
+      <option value="Другое">Другое</option>
+    </FilterSelect>
+    <SortSelect
+      value={sortBy}
+      onChange={(e) => setSortBy(e.target.value)}
+      selected={sortBy !== ''}
+    >
+      <option value="">Сортировать по</option>
+      <option value="date">По дате</option>
+      <option value="amount">По сумме</option>
+    </SortSelect>
+  </div>
+  <Table>
+    <thead>
+      <tr>
+        <TableHeader>Описание</TableHeader>
+        <TableHeader>Категория</TableHeader>
+        <TableHeader>Дата</TableHeader>
+        <TableHeader>Сумма</TableHeader>
+        <TableHeader>Действия</TableHeader>
+      </tr>
+    </thead>
+    <tbody>
+      {expenses
+        .filter(expense => !filterCategory || expense.category === filterCategory)
+        .sort((a, b) => {
+          if (sortBy === 'date') return new Date(a.date.split('.').reverse().join('-')) - new Date(b.date.split('.').reverse().join('-'));
+          if (sortBy === 'amount') return parseInt(a.amount.replace(' Р', '')) - parseInt(b.amount.replace(' Р', ''));
+          return 0;
+        })
+        .map(expense => (
+          <TableRow
+            key={expense.id}
+            selected={false}
+          >
+            <TableCell>{expense.description}</TableCell>
+            <TableCell>{expense.category}</TableCell>
+            <TableCell>{expense.date}</TableCell>
+            <TableCell>{expense.amount}</TableCell>
+            <TableCell>
+              <ActionIcons
+                role="img"
+                aria-label="edit"
+                onClick={() => window.location.href = `/spending/${expense.id}`}
               >
-                <option value="">Фильтровать по категории</option>
-                <option value="Еда">Еда</option>
-                <option value="Транспорт">Транспорт</option>
-                <option value="Жилье">Жилье</option>
-                <option value="Развлечения">Развлечения</option>
-                <option value="Образование">Образование</option>
-                <option value="Другое">Другое</option>
-              </FilterSelect>
-              <SortSelect
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                selected={sortBy !== ''}
+                ✏️
+              </ActionIcons>
+              <ActionIcons
+                role="img"
+                aria-label="delete"
+                onClick={() => handleDelete(expense.id)}
               >
-                <option value="">Сортировать по</option>
-                <option value="date">По дате</option>
-                <option value="amount">По сумме</option>
-              </SortSelect>
-            </div>
-            <Table>
-              <thead>
-                <tr>
-                  <TableHeader>Описание</TableHeader>
-                  <TableHeader>Категория</TableHeader>
-                  <TableHeader>Дата</TableHeader>
-                  <TableHeader>Сумма</TableHeader>
-                  <TableHeader>Действия</TableHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses
-                  .filter(expense => !filterCategory || expense.category === filterCategory)
-                  .sort((a, b) => {
-                    if (sortBy === 'date') return new Date(a.date.split('.').reverse().join('-')) - new Date(b.date.split('.').reverse().join('-'));
-                    if (sortBy === 'amount') return parseInt(a.amount.replace(' Р', '')) - parseInt(b.amount.replace(' Р', ''));
-                    return 0;
-                  })
-                  .map(expense => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{expense.description}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>{expense.date}</TableCell>
-                    <TableCell>{expense.amount}</TableCell>
-                    <TableCell>
-                      <ActionIcons role="img" aria-label="edit" onClick={() => window.location.href = `/spending/${expense.id}`}>✏️</ActionIcons>
-                      <ActionIcons role="img" aria-label="delete" onClick={() => handleDelete(expense.id)}>🗑️</ActionIcons>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
-          </TableSection>
+                🗑️
+              </ActionIcons>
+            </TableCell>
+          </TableRow>
+        ))}
+    </tbody>
+  </Table>
+</TableSection>
           <FormSection>
-            <FormTitle>Новый расход</FormTitle>
-            <FormInput
-              name="description"
-              placeholder="Введите описание"
-              value={formData.description}
-              onChange={handleInputChange}
-              valid={isValidInput(formData.description, 'description')}
-            />
-            <FormSelect
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              selected={formData.category !== ''}
-            >
-              <option value="">Выберите категорию</option>
-              <option value="Еда">Еда</option>
-              <option value="Транспорт">Транспорт</option>
-              <option value="Жилье">Жилье</option>
-              <option value="Развлечения">Развлечения</option>
-              <option value="Образование">Образование</option>
-              <option value="Другое">Другое</option>
-            </FormSelect>
-            <FormInput
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              valid={isValidInput(formData.date, 'date')}
-            />
-            <FormInput
-              name="amount"
-              placeholder="Введите сумму"
-              value={formData.amount}
-              onChange={handleInputChange}
-              valid={isValidInput(formData.amount, 'amount')}
-            />
-            <FormButton onClick={() => window.location.href = '/spending/new'}>Добавить новый расход</FormButton>
+            {editData ? (
+              <>
+                <FormTitle>Редактирование расхода</FormTitle>
+                <FormInput
+                  name="description"
+                  value={editData.description}
+                  onChange={handleEditChange}
+                  placeholder="Введите описание"
+                  valid={isValidInput(editData.description, 'description')}
+                />
+                <FormSelect
+                  name="category"
+                  value={editData.category}
+                  onChange={handleEditChange}
+                  selected={editData.category !== ''}
+                >
+                  <option value="">Выберите категорию</option>
+                  <option value="Еда">Еда</option>
+                  <option value="Транспорт">Транспорт</option>
+                  <option value="Жилье">Жилье</option>
+                  <option value="Развлечения">Развлечения</option>
+                  <option value="Образование">Образование</option>
+                  <option value="Другое">Другое</option>
+                </FormSelect>
+                <FormInput
+                  type="date"
+                  name="date"
+                  value={editData.date}
+                  onChange={handleEditChange}
+                  valid={isValidInput(editData.date, 'date')}
+                />
+                <FormInput
+                  name="amount"
+                  value={editData.amount}
+                  onChange={handleEditChange}
+                  placeholder="Введите сумму"
+                  valid={isValidInput(editData.amount, 'amount')}
+                />
+                <FormButton onClick={handleSaveEdit}>Сохранить редактирование</FormButton>
+                <FormButton onClick={() => { setSelectedId(null); setEditData(null); }}>Отмена</FormButton>
+              </>
+            ) : (
+              <>
+                <FormTitle>Новый расход</FormTitle>
+                <FormInput
+                  name="description"
+                  placeholder="Введите описание"
+                  value=""
+                  onChange={handleEditChange}
+                  valid={false}
+                />
+                <FormSelect
+                  name="category"
+                  value=""
+                  onChange={handleEditChange}
+                  selected={false}
+                >
+                  <option value="">Выберите категорию</option>
+                  <option value="Еда">Еда</option>
+                  <option value="Транспорт">Транспорт</option>
+                  <option value="Жилье">Жилье</option>
+                  <option value="Развлечения">Развлечения</option>
+                  <option value="Образование">Образование</option>
+                  <option value="Другое">Другое</option>
+                </FormSelect>
+                <FormInput
+                  type="date"
+                  name="date"
+                  value=""
+                  onChange={handleEditChange}
+                  valid={false}
+                />
+                <FormInput
+                  name="amount"
+                  placeholder="Введите сумму"
+                  value=""
+                  onChange={handleEditChange}
+                  valid={false}
+                />
+                <FormButton onClick={() => window.location.href = '/spending/new'}>Добавить новый расход</FormButton>
+              </>
+            )}
           </FormSection>
         </ContentWrapper>
         <Outlet />
