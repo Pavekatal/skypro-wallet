@@ -58,20 +58,20 @@ const Analytics = ({ period }) => {
     },
     scales: {
       y: {
-        display: false, // Полностью скрываем ось Y (вертикальную полоску с расходами)
+        display: false,
         beginAtZero: true,
       },
       x: {
         grid: {
-          display: false, // Убираем сетку по оси X
+          display: false,
         },
         ticks: {
-          padding: 0, // Убираем отступы у подписей категорий
+          padding: 0,
         },
       },
     },
     layout: {
-      padding: 0, // Убираем все отступы
+      padding: 0,
     },
     animation: {
       duration: 1000,
@@ -80,7 +80,7 @@ const Analytics = ({ period }) => {
 
   const showValuesPlugin = {
     id: 'showValues',
-    afterDraw(chart) {
+    beforeDatasetsDraw(chart) {
       if (!chart || !chart.ctx || !chart.data || !chart.chartArea) return;
       
       const ctx = chart.ctx;
@@ -153,7 +153,7 @@ const Analytics = ({ period }) => {
         borderRadius: '12px',
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: 'white', // Убрал серый фон
+        backgroundColor: 'white',
         padding: '12px',
       }}>
         <Bar 
