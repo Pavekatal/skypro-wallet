@@ -297,6 +297,9 @@ const ToggleButton = styled.span`
   font-weight: ${({ $isActive }) => $isActive ? 600 : 400};
   text-decoration: ${({ $isActive }) => $isActive ? 'underline' : 'none'};
   transition: all 0.2s ease;
+  min-width: 40px; // Добавить минимальную ширину
+  text-align: center; // Центрировать текст
+  display: inline-block; // Чтобы min-width работал
 
   &:hover {
     color: #24A148;
