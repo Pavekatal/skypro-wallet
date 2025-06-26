@@ -14,6 +14,22 @@ const ContentWrapper = styled.div`
   }
 `;
 
+const SpendingAnalysisWrapper = styled.div`
+  padding: 10px 20px;
+`;
+
+const PageTitle = styled.h2`
+  padding-top: 36px;
+`;
+
+const AnalysisContainer = styled.div`
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+  gap: 20px; // Добавляем отступ между календарем и аналитикой
+`;
+
+
 const SpendingAnalysisPage = () => {
   const [period, setPeriod] = useState('');
   const [expenses, setExpenses] = useState([]);
@@ -38,19 +54,19 @@ const SpendingAnalysisPage = () => {
   }, []);
 
   return (
-    <>
+     <>
       <Header currentPath="/spending-analysis" />
       <ContentWrapper>
-        <div style={{ padding: '10px 20px' }}>
-          <h2 style={{ paddingTop: '36px' }}>Анализ расходов</h2>
-          <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center' }}>
+        <SpendingAnalysisWrapper>
+          <PageTitle>Анализ расходов</PageTitle>
+          <AnalysisContainer>
             <Calendar 
               onPeriodChange={setPeriod} 
               expenses={expenses}
             />
             <Analytics period={period} expenses={expenses} />
-          </div>
-        </div>
+          </AnalysisContainer>
+        </SpendingAnalysisWrapper>
       </ContentWrapper>
     </>
   );
