@@ -91,9 +91,16 @@ const Calendar = ({ onPeriodChange }) => {
   const selectMonth = (year, month) => {
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
     
-    if (!startMonth || (startMonth && endMonth)) {
-      setStartMonth(monthKey);
+    // Если это третий клик (уже есть start и end), сбрасываем выбор
+    if (startMonth && endMonth) {
+      setStartMonth(null);
       setEndMonth(null);
+      updatePeriodDisplay(null, null);
+      return;
+    }
+    
+    if (!startMonth) {
+      setStartMonth(monthKey);
     } else {
       const [y1, m1] = startMonth.split('-').map(Number);
       if (year < y1 || (year === y1 && month < m1)) {
@@ -104,17 +111,17 @@ const Calendar = ({ onPeriodChange }) => {
       }
     }
     
-    // Обновляем отображение периода
     updatePeriodDisplay(
-      startMonth && endMonth ? null : startMonth || monthKey,
-      startMonth && !endMonth ? monthKey : null
+      startMonth ? startMonth : monthKey,
+      startMonth ? monthKey : null
     );
   };
 
-  const isMonthSelected = (year, month) => {
-    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-    return monthKey === startMonth || monthKey === endMonth;
-  };
+ const isMonthSelected = (year, month) => {
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+  return monthKey === startMonth || monthKey === endMonth;
+};
+
   
   const isMonthInRange = (year, month) => {
     if (startMonth && endMonth) {
@@ -159,61 +166,60 @@ const Calendar = ({ onPeriodChange }) => {
     );
   };
 
-  const renderYearView = () => {
-    const monthNames = [
-      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
-      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-    ];
+ const renderYearView = () => {
+  const monthNames = [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  ];
 
-    return (
-      <ScrollContainer>
-        <YearContainer>
-          <YearHeader>2024</YearHeader>
-          <MonthsGrid>
-            {monthNames.map((month, index) => {
-              const monthNum = index + 1;
-              const selected = isMonthSelected(2024, monthNum);
-              const inRange = isMonthInRange(2024, monthNum);
-              
-              return (
-                <MonthCell
-                  key={`2024-${monthNum}`}
-                  $isSelected={selected}
-                  $isInRange={inRange}
-                  onClick={() => selectMonth(2024, monthNum)}
-                >
-                  {month}
-                </MonthCell>
-              );
-            })}
-          </MonthsGrid>
-        </YearContainer>
+  return (
+    <ScrollContainer>
+      <YearContainer>
+        <YearHeader>2024</YearHeader>
+        <MonthsGrid>
+          {monthNames.map((month, index) => {
+            const monthNum = index + 1;
+            const selected = isMonthSelected(2024, monthNum);
+            const inRange = isMonthInRange(2024, monthNum);
+            
+            return (
+              <MonthCell
+                key={`2024-${monthNum}`}
+                $isSelected={selected}
+                $isInRange={inRange}
+                onClick={() => selectMonth(2024, monthNum)}
+              >
+                {month}
+              </MonthCell>
+            );
+          })}
+        </MonthsGrid>
+      </YearContainer>
 
-        <YearContainer>
-          <YearHeader>2025</YearHeader>
-          <MonthsGrid>
-            {monthNames.map((month, index) => {
-              const monthNum = index + 1;
-              const selected = isMonthSelected(2025, monthNum);
-              const inRange = isMonthInRange(2025, monthNum);
-              
-              return (
-                <MonthCell
-                  key={`2025-${monthNum}`}
-                  $isSelected={selected}
-                  $isInRange={inRange}
-                  onClick={() => selectMonth(2025, monthNum)}
-                >
-                  {month}
-                </MonthCell>
-              );
-            })}
-          </MonthsGrid>
-        </YearContainer>
-      </ScrollContainer>
-    );
-  };
-
+      <YearContainer>
+        <YearHeader>2025</YearHeader>
+        <MonthsGrid>
+          {monthNames.map((month, index) => {
+            const monthNum = index + 1;
+            const selected = isMonthSelected(2025, monthNum);
+            const inRange = isMonthInRange(2025, monthNum);
+            
+            return (
+              <MonthCell
+                key={`2025-${monthNum}`}
+                $isSelected={selected}
+                $isInRange={inRange}
+                onClick={() => selectMonth(2025, monthNum)}
+              >
+                {month}
+              </MonthCell>
+            );
+          })}
+        </MonthsGrid>
+      </YearContainer>
+    </ScrollContainer>
+  );
+};
   const renderMonthView = () => (
     <>
       <WeekdaysHeader>
@@ -261,7 +267,6 @@ const Calendar = ({ onPeriodChange }) => {
   );
 };
 
-
 const CalendarWrapper = styled.div`
   width: 320px;
   height: 540px;
@@ -297,9 +302,9 @@ const ToggleButton = styled.span`
   font-weight: ${({ $isActive }) => $isActive ? 600 : 400};
   text-decoration: ${({ $isActive }) => $isActive ? 'underline' : 'none'};
   transition: all 0.2s ease;
-  min-width: 40px; // Добавить минимальную ширину
-  text-align: center; // Центрировать текст
-  display: inline-block; // Чтобы min-width работал
+  min-width: 40px;
+  text-align: center;
+  display: inline-block;
 
   &:hover {
     color: #24A148;
@@ -355,7 +360,6 @@ const DayCell = styled.div`
     $isSelected ? '#CFF8E2' :
     $isInRange ? '#EAF9F1' : '#f5f5f5'};
   color: ${({ $isSelected }) => ($isSelected ? '#24A148' : '#000')};
-  font-weight: ${({ $isSelected }) => ($isSelected ? 'bold' : 'normal')};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -392,7 +396,6 @@ const MonthCell = styled.div`
     $isSelected ? '#CFF8E2' :
     $isInRange ? '#EAF9F1' : '#F1F1F1'};
   color: ${({ $isSelected }) => ($isSelected ? '#24A148' : '#000')};
-  font-weight: ${({ $isSelected }) => ($isSelected ? '600' : 'normal')};
   border-radius: 999px;
   text-align: center;
   padding: 10px 0;
@@ -402,7 +405,6 @@ const MonthCell = styled.div`
   &:hover {
     background: #E0F2E8;
     color: #24A148;
-    font-weight: 600;
   }
 `;
 
