@@ -10,8 +10,12 @@ import {
   SAuthForm,
 } from "./SAuthForm.styled";
 import Button from "../buttons/Button";
-import { ErrorMessage } from "../errors/SErrorContainer.styled";
+import {
+  ErrorMessage,
+  ErrorStarContainer,
+} from "../errors/SErrorContainer.styled";
 import { Link, useNavigate } from "react-router-dom";
+import { InputWrapper } from "../inputs/SInput.styled";
 
 const AuthForm = ({ isSignUp }) => {
   const [values, setValues] = useState({
@@ -50,6 +54,10 @@ const AuthForm = ({ isSignUp }) => {
       setIsTouched((prev) => ({ ...prev, [inputName]: true }));
     }
 
+    if (isTouched[inputName]) {
+      setErrors((prev) => ({ ...prev, [inputName]: false }));
+    }
+
     setValues((prev) => ({ ...prev, [inputName]: value }));
 
     if (value.length === 0) {
@@ -65,6 +73,7 @@ const AuthForm = ({ isSignUp }) => {
 
     if (value.length <= 3) {
       setStatusInputs((prev) => ({ ...prev, [inputName]: "error" }));
+      setIsActiveButton(false);
       setErrors({ ...errors, [inputName]: true });
     }
   };
@@ -100,17 +109,6 @@ const AuthForm = ({ isSignUp }) => {
 
     const newValues = { ...values };
 
-    Object.keys(newErrors).forEach((key) => {
-      if (newErrors[key]) {
-        if (!newValues[key].endsWith("*")) {
-          newValues[key] = newValues[key] + "*";
-        }
-      } else {
-        if (newValues[key].endsWith("*")) {
-          newValues[key] = newValues[key].slice(0, -1);
-        }
-      }
-    });
     setValues(newValues);
 
     if (!isValid) {
@@ -152,37 +150,52 @@ const AuthForm = ({ isSignUp }) => {
             </AuthFormModalTtl>
             <AuthFormLogin onSubmit={handleSubmit}>
               {isSignUp && (
-                <Input
-                  id="formname"
-                  type="text"
-                  name="name"
-                  placeholder="Имя"
-                  value={values.name}
-                  statusInput={statusInputs.name}
-                  showStar={errors.name && isSubmitted}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                ></Input>
+                <InputWrapper>
+                  <Input
+                    id="formname"
+                    type="text"
+                    name="name"
+                    placeholder="Имя"
+                    value={values.name}
+                    statusInput={statusInputs.name}
+                    // showStar={errors.name && isSubmitted}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                  />
+                  {errors.name && isSubmitted && (
+                    <ErrorStarContainer>*</ErrorStarContainer>
+                  )}
+                </InputWrapper>
               )}
-              <Input
-                id="formlogin"
-                type="text"
-                name="login"
-                placeholder="Эл. почта"
-                value={values.email}
-                statusInput={statusInputs.email}
-                showStar={errors.email && isSubmitted}
-                onChange={(e) => handleChange("email", e.target.value)}
-              ></Input>
-              <Input
-                id="formpassword"
-                type="password"
-                name="password"
-                placeholder="Пароль"
-                value={values.password}
-                statusInput={statusInputs.password}
-                showStar={errors.password && isSubmitted}
-                onChange={(e) => handleChange("password", e.target.value)}
-              ></Input>
+              <InputWrapper>
+                <Input
+                  id="formlogin"
+                  type="text"
+                  name="login"
+                  placeholder="Эл. почта"
+                  value={values.email}
+                  statusInput={statusInputs.email}
+                  // showStar={errors.email && isSubmitted}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                />
+                {errors.email && isSubmitted && (
+                  <ErrorStarContainer>*</ErrorStarContainer>
+                )}
+              </InputWrapper>
+              <InputWrapper>
+                <Input
+                  id="formpassword"
+                  type="password"
+                  name="password"
+                  placeholder="Пароль"
+                  value={values.password}
+                  statusInput={statusInputs.password}
+                  // showStar={errors.password && isSubmitted}
+                  onChange={(e) => handleChange("password", e.target.value)}
+                />
+                {errors.password && isSubmitted && (
+                  <ErrorStarContainer>*</ErrorStarContainer>
+                )}
+              </InputWrapper>
               <ErrorMessage>{error}</ErrorMessage>
               <AuthButtonContainer>
                 <Button isActive={isActiveButton}>

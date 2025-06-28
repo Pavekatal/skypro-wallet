@@ -41,11 +41,7 @@ export const AuthFormLogin = styled.form`
   align-items: center;
   justify-content: center;
 
-  input {
-    margin-bottom: 12px;
-  }
-
-  input:last-of-type {
+  div:nth-last-of-type(2) {
     margin-bottom: 0;
   }
 `;
