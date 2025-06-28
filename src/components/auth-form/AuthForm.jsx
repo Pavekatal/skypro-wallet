@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Input from "../inputs/Input";
 import {
   AuthButtonContainer,
@@ -14,24 +15,26 @@ import {
   ErrorMessage,
   ErrorStarContainer,
 } from "../errors/SErrorContainer.styled";
-import { Link, useNavigate } from "react-router-dom";
 import { InputWrapper } from "../inputs/SInput.styled";
+import { AuthContext } from "../../context/AuthContext";
+import { signIn, signUp } from "../../services/auth";
 
 const AuthForm = ({ isSignUp }) => {
+  const { login } = useContext(AuthContext);
   const [values, setValues] = useState({
     name: "",
-    email: "",
+    login: "",
     password: "",
   });
   const [statusInputs, setStatusInputs] = useState({
     name: "default",
-    email: "default",
+    login: "default",
     password: "default",
   });
 
   const [isTouched, setIsTouched] = useState({
     name: false,
-    email: false,
+    login: false,
     password: false,
   });
 
@@ -40,7 +43,7 @@ const AuthForm = ({ isSignUp }) => {
 
   const [errors, setErrors] = useState({
     name: false,
-    email: false,
+    login: false,
     password: false,
   });
   const [error, setError] = useState("");
@@ -78,14 +81,14 @@ const AuthForm = ({ isSignUp }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setIsTouched({ name: true, email: true, password: true });
+    setIsTouched({ name: true, login: true, password: true });
 
     setIsSubmitted(true);
 
-    const newErrors = { name: false, email: false, password: false };
+    const newErrors = { name: false, login: false, password: false };
     let isValid = true;
 
     if (isSignUp) {
@@ -95,8 +98,8 @@ const AuthForm = ({ isSignUp }) => {
       }
     }
 
-    if (!values.email.trim() || values.email.trim().length <= 3) {
-      newErrors.email = true;
+    if (!values.login.trim() || values.login.trim().length <= 3) {
+      newErrors.login = true;
       isValid = false;
     }
 
@@ -118,15 +121,31 @@ const AuthForm = ({ isSignUp }) => {
       );
       setStatusInputs((prev) => ({
         name: newErrors.name ? "error" : prev.name,
-        email: newErrors.email ? "error" : prev.email,
+        login: newErrors.login ? "error" : prev.login,
         password: newErrors.password ? "error" : prev.password,
       }));
 
       return;
     }
 
-    setError("");
-    navigate("/");
+    try {
+      console.log("values", values);
+      console.log("login, password:", values.login, values.password);
+      const data = !isSignUp
+        ? await signIn({ login: values.login, password: values.password })
+        : await signUp(values);
+
+      if (data) {
+        login({ ...data, password: null });
+        setError("");
+        navigate("/");
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+
+    // setError("");
+    // navigate("/");
   };
 
   return (
@@ -172,12 +191,12 @@ const AuthForm = ({ isSignUp }) => {
                   type="text"
                   name="login"
                   placeholder="Эл. почта"
-                  value={values.email}
-                  statusInput={statusInputs.email}
-                  // showStar={errors.email && isSubmitted}
-                  onChange={(e) => handleChange("email", e.target.value)}
+                  value={values.login}
+                  statusInput={statusInputs.login}
+                  // showStar={errors.login && isSubmitted}
+                  onChange={(e) => handleChange("login", e.target.value)}
                 />
-                {errors.email && isSubmitted && (
+                {errors.login && isSubmitted && (
                   <ErrorStarContainer>*</ErrorStarContainer>
                 )}
               </InputWrapper>
