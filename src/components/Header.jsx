@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 const HeaderWrapper = styled.header`
   display: flex;
-  justify-content: space-around;
+  justify-content: flex-start; 
   align-items: center;
   padding: 10px 20px;
   background: #fff;
@@ -14,28 +14,31 @@ const HeaderWrapper = styled.header`
 const Logo = styled.div`
   font-size: 20px;
   font-weight: 600;
+  margin-right: 20px; 
 `;
 
 const Nav = styled.nav`
   display: flex;
   gap: 20px;
-  margin-left: 20px;
+  margin-left: auto; 
+  margin-right: auto;
 `;
 
 const NavButton = styled(Link)`
   text-decoration: ${props => props.active ? 'underline' : 'none'};
-  color: ${props => props.active || props.hover ? '#00C853' : '#000'};
+  color: ${props => (props.active || props.hover) ? '#00C853' : '#000'};
   font-family: 'Montserrat', sans-serif;
-  font-weight: ${props => props.active || props.hover ? '600' : '400'};
+  font-weight: ${props => (props.active || props.hover) ? '600' : '400'};
   cursor: pointer;
   &:hover {
     color: #00C853;
     font-weight: 600;
+    text-decoration: underline;
   }
 `;
 
 const LogoutButton = styled.button`
- 
+  margin-left: 20px;
   background: none;
   border: none;
   color: #000;
