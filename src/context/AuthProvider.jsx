@@ -16,7 +16,9 @@ const AuthProvider = ({ children }) => {
   };
 
   const login = (userLogin) => {
+    console.log("userBefore", user);
     updateUserInfo(userLogin);
+    console.log("userAfter", user);
     return true;
   };
 

@@ -16,9 +16,9 @@ function AppRoutes() {
           <Route path="spending/new" element={<NewSpendingPage />} />
           <Route path="spending/:id" element={<EditSpendingPage />} />
         </Route>
+        <Route path="/spending-analysis" element={<SpendingAnalysisPage />} />
       </Route>
 
-      <Route path="/spending-analysis" element={<SpendingAnalysisPage />} />
       <Route path="/sign-in" element={<SignInPage />} />
       <Route path="/sign-up" element={<SignUpPage />} />
       <Route path="*" element={<NotFoundPage />} />

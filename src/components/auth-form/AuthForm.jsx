@@ -50,6 +50,7 @@ const AuthForm = ({ isSignUp }) => {
   const navigate = useNavigate();
 
   const handleChange = (inputName, value) => {
+    setErrors((prev) => ({ ...prev, [inputName]: false }));
     setError("");
     setIsActiveButton(true);
 
@@ -85,7 +86,6 @@ const AuthForm = ({ isSignUp }) => {
     e.preventDefault();
 
     setIsTouched({ name: true, login: true, password: true });
-
     setIsSubmitted(true);
 
     const newErrors = { name: false, login: false, password: false };
@@ -129,8 +129,6 @@ const AuthForm = ({ isSignUp }) => {
     }
 
     try {
-      console.log("values", values);
-      console.log("login, password:", values.login, values.password);
       const data = !isSignUp
         ? await signIn({ login: values.login, password: values.password })
         : await signUp(values);
@@ -142,10 +140,10 @@ const AuthForm = ({ isSignUp }) => {
       }
     } catch (err) {
       setError(err.message);
+      setErrors({ name: true, login: true, password: true });
+      setStatusInputs({ name: "error", login: "error", password: "error" });
+      setIsActiveButton(false);
     }
-
-    // setError("");
-    // navigate("/");
   };
 
   return (
@@ -177,7 +175,6 @@ const AuthForm = ({ isSignUp }) => {
                     placeholder="Имя"
                     value={values.name}
                     statusInput={statusInputs.name}
-                    // showStar={errors.name && isSubmitted}
                     onChange={(e) => handleChange("name", e.target.value)}
                   />
                   {errors.name && isSubmitted && (
