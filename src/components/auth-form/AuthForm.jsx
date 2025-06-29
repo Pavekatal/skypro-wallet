@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Input from "../inputs/Input";
 import {
   AuthButtonContainer,
@@ -10,24 +11,30 @@ import {
   SAuthForm,
 } from "./SAuthForm.styled";
 import Button from "../buttons/Button";
-import { ErrorMessage } from "../errors/SErrorContainer.styled";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  ErrorMessage,
+  ErrorStarContainer,
+} from "../errors/SErrorContainer.styled";
+import { InputWrapper } from "../inputs/SInput.styled";
+import { AuthContext } from "../../context/AuthContext";
+import { signIn, signUp } from "../../services/auth";
 
 const AuthForm = ({ isSignUp }) => {
+  const { login } = useContext(AuthContext);
   const [values, setValues] = useState({
     name: "",
-    email: "",
+    login: "",
     password: "",
   });
   const [statusInputs, setStatusInputs] = useState({
     name: "default",
-    email: "default",
+    login: "default",
     password: "default",
   });
 
   const [isTouched, setIsTouched] = useState({
     name: false,
-    email: false,
+    login: false,
     password: false,
   });
 
@@ -36,18 +43,23 @@ const AuthForm = ({ isSignUp }) => {
 
   const [errors, setErrors] = useState({
     name: false,
-    email: false,
+    login: false,
     password: false,
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (inputName, value) => {
+    setErrors((prev) => ({ ...prev, [inputName]: false }));
     setError("");
     setIsActiveButton(true);
 
     if (!isTouched[inputName]) {
       setIsTouched((prev) => ({ ...prev, [inputName]: true }));
+    }
+
+    if (isTouched[inputName]) {
+      setErrors((prev) => ({ ...prev, [inputName]: false }));
     }
 
     setValues((prev) => ({ ...prev, [inputName]: value }));
@@ -65,18 +77,18 @@ const AuthForm = ({ isSignUp }) => {
 
     if (value.length <= 3) {
       setStatusInputs((prev) => ({ ...prev, [inputName]: "error" }));
+      setIsActiveButton(false);
       setErrors({ ...errors, [inputName]: true });
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setIsTouched({ name: true, email: true, password: true });
-
+    setIsTouched({ name: true, login: true, password: true });
     setIsSubmitted(true);
 
-    const newErrors = { name: false, email: false, password: false };
+    const newErrors = { name: false, login: false, password: false };
     let isValid = true;
 
     if (isSignUp) {
@@ -86,8 +98,8 @@ const AuthForm = ({ isSignUp }) => {
       }
     }
 
-    if (!values.email.trim() || values.email.trim().length <= 3) {
-      newErrors.email = true;
+    if (!values.login.trim() || values.login.trim().length <= 3) {
+      newErrors.login = true;
       isValid = false;
     }
 
@@ -100,17 +112,6 @@ const AuthForm = ({ isSignUp }) => {
 
     const newValues = { ...values };
 
-    Object.keys(newErrors).forEach((key) => {
-      if (newErrors[key]) {
-        if (!newValues[key].endsWith("*")) {
-          newValues[key] = newValues[key] + "*";
-        }
-      } else {
-        if (newValues[key].endsWith("*")) {
-          newValues[key] = newValues[key].slice(0, -1);
-        }
-      }
-    });
     setValues(newValues);
 
     if (!isValid) {
@@ -120,15 +121,29 @@ const AuthForm = ({ isSignUp }) => {
       );
       setStatusInputs((prev) => ({
         name: newErrors.name ? "error" : prev.name,
-        email: newErrors.email ? "error" : prev.email,
+        login: newErrors.login ? "error" : prev.login,
         password: newErrors.password ? "error" : prev.password,
       }));
 
       return;
     }
 
-    setError("");
-    navigate("/");
+    try {
+      const data = !isSignUp
+        ? await signIn({ login: values.login, password: values.password })
+        : await signUp(values);
+
+      if (data) {
+        login({ ...data, password: null });
+        setError("");
+        navigate("/");
+      }
+    } catch (err) {
+      setError(err.message);
+      setErrors({ name: true, login: true, password: true });
+      setStatusInputs({ name: "error", login: "error", password: "error" });
+      setIsActiveButton(false);
+    }
   };
 
   return (
@@ -152,37 +167,51 @@ const AuthForm = ({ isSignUp }) => {
             </AuthFormModalTtl>
             <AuthFormLogin onSubmit={handleSubmit}>
               {isSignUp && (
-                <Input
-                  id="formname"
-                  type="text"
-                  name="name"
-                  placeholder="Имя"
-                  value={values.name}
-                  statusInput={statusInputs.name}
-                  showStar={errors.name && isSubmitted}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                ></Input>
+                <InputWrapper>
+                  <Input
+                    id="formname"
+                    type="text"
+                    name="name"
+                    placeholder="Имя"
+                    value={values.name}
+                    statusInput={statusInputs.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                  />
+                  {errors.name && isSubmitted && (
+                    <ErrorStarContainer>*</ErrorStarContainer>
+                  )}
+                </InputWrapper>
               )}
-              <Input
-                id="formlogin"
-                type="text"
-                name="login"
-                placeholder="Эл. почта"
-                value={values.email}
-                statusInput={statusInputs.email}
-                showStar={errors.email && isSubmitted}
-                onChange={(e) => handleChange("email", e.target.value)}
-              ></Input>
-              <Input
-                id="formpassword"
-                type="password"
-                name="password"
-                placeholder="Пароль"
-                value={values.password}
-                statusInput={statusInputs.password}
-                showStar={errors.password && isSubmitted}
-                onChange={(e) => handleChange("password", e.target.value)}
-              ></Input>
+              <InputWrapper>
+                <Input
+                  id="formlogin"
+                  type="text"
+                  name="login"
+                  placeholder="Эл. почта"
+                  value={values.login}
+                  statusInput={statusInputs.login}
+                  // showStar={errors.login && isSubmitted}
+                  onChange={(e) => handleChange("login", e.target.value)}
+                />
+                {errors.login && isSubmitted && (
+                  <ErrorStarContainer>*</ErrorStarContainer>
+                )}
+              </InputWrapper>
+              <InputWrapper>
+                <Input
+                  id="formpassword"
+                  type="password"
+                  name="password"
+                  placeholder="Пароль"
+                  value={values.password}
+                  statusInput={statusInputs.password}
+                  // showStar={errors.password && isSubmitted}
+                  onChange={(e) => handleChange("password", e.target.value)}
+                />
+                {errors.password && isSubmitted && (
+                  <ErrorStarContainer>*</ErrorStarContainer>
+                )}
+              </InputWrapper>
               <ErrorMessage>{error}</ErrorMessage>
               <AuthButtonContainer>
                 <Button isActive={isActiveButton}>
