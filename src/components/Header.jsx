@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 const HeaderWrapper = styled.header`
   display: flex;
-  justify-content: flex-start; 
+  justify-content: flex-start;
   align-items: center;
   padding: 10px 20px;
   background: #fff;
@@ -14,13 +14,13 @@ const HeaderWrapper = styled.header`
 const Logo = styled.div`
   font-size: 20px;
   font-weight: 600;
-  margin-right: 20px; 
+  margin-right: 20px;
 `;
 
 const Nav = styled.nav`
   display: flex;
   gap: 20px;
-  margin-left: auto; 
+  margin-left: auto;
   margin-right: auto;
 `;
 
