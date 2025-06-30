@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 const HeaderWrapper = styled.header`
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-around;
   align-items: center;
   padding: 10px 20px;
   background: #fff;
