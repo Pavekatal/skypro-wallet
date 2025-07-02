@@ -1,53 +1,123 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { FoodIcon, TransportIcon, HousingIcon, EntertainmentIcon, EducationIcon, OtherIcon } from '../components/Icons.jsx';
 
+// Стили для заголовка формы
 const FormTitle = styled.h3`
-  font-size: 18px;
-  margin-bottom: 20px;
-  text-align: left;
-  margin: 0 0 0 20px;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 100%;
+  margin: 15px 0 20px 20px;
+  color: #333;
+  font-family: 'Montserrat', sans-serif;
 `;
 
+// Стили для заголовков полей (включая "Категории")
+const FieldLabel = styled.div`
+  font-weight: 600;
+  font-size: 16px;
+  margin: 20px 0 20px 20px;
+  color: #333;
+  font-family: 'Montserrat', sans-serif;
+`;
+
+// Стили для всех полей ввода (включая дату и сумму)
 const FormInput = styled.input`
   display: block;
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
-  border: 1px solid ${props => props.valid ? '#006400' : '#ddd'};
-  border-radius: 4px;
-  background: ${props => (props.valid && props.editing) ? '#fff' : (props.valid ? '#90EE90' : 'transparent')};
+  width: 280px;
+  height: 39px;
+  padding: 12px;
+  margin: 0 0 15px 20px;
+  border: 0.5px solid #999999;
+  border-radius: 6px;
+  gap: 12px;
+  background: transparent;
   font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
   transition: all 0.3s ease;
-`;
-
-const FormSelect = styled.select`
-  display: block;
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: 'Montserrat', sans-serif;
-  background: ${props => (props.selected && props.editing) ? '#fff' : (props.selected ? '#00C853' : 'transparent')};
-  color: ${props => (props.selected && props.editing) ? '#000' : (props.selected ? '#fff' : '#000')};
-  &:after {
-    content: ${props => props.selected ? '"✓"' : '""'};
-    margin-left: 5px;
-    color: ${props => (props.selected && props.editing) ? '#000' : '#fff'};
+  &:focus {
+    background: ${props => props.valid ? '#e6f3e6' : '#fff'}; 
+    border-color: ${props => props.valid ? '#1FA46C' : '#999999'};
+    outline: none;
   }
 `;
 
+// Стили для поля даты
+const DateInput = styled.input`
+  display: block;
+  width: 280px;
+  height: 39px;
+  padding: 12px;
+  margin: 0 0 15px 20px;
+  border: 0.5px solid #999999;
+  border-radius: 6px;
+  gap: 12px;
+  background: transparent;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  &:focus {
+    background: ${props => props.valid ? '#e6f3e6' : '#fff'}; 
+    border-color: ${props => props.valid ? '#1FA46C' : '#999999'}; 
+    outline: none;
+  }
+`;
+
+// Стили для кнопок категорий
+const CategoryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 30px;
+  background: #F4F5F6;
+  color: #333;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  svg {
+    margin-right: 6px;
+  }
+  &:hover {
+    background: #e0e0e0;
+  }
+  ${({ selected }) =>
+    selected &&
+    `
+      background: #DBFFE9;
+      color: #1FA46C;
+      svg path {
+        fill: #1FA46C;
+      }
+      &:hover {
+        background: #C1FFD6;
+      }
+    `}
+`;
+
+// Стили для кнопки отправки формы
 const FormButton = styled.button`
-  width: 100%;
-  padding: 10px;
-  background: #00C853;
+  width: 280px;
+  height: 39px;
+  border-radius: 6px;
+  gap: 12px;
+  padding: 12px;
+  background: #1FA46C;
   color: #fff;
   border: none;
-  border-radius: 4px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 100%;
+  text-align: center;
   cursor: pointer;
-  margin-top: 10px;
+  margin: 15px 0 0 20px;
+  transition: background 0.3s ease;
+  &:hover {
+    background: #16905A;
+  }
 `;
 
 const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
@@ -88,6 +158,11 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     setErrors({ ...errors, [name]: '' });
   };
 
+  const handleCategorySelect = (category) => {
+    setFormData({ ...formData, category });
+    setErrors({ ...errors, category: '' });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = validateForm();
@@ -103,14 +178,26 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   };
 
   const isValidInput = (value, field) => {
-    if (field === 'amount') return !value || !isNaN(value);
-    return value.trim() !== '';
+    if (field === 'description') return value.trim() !== '';
+    if (field === 'date') return value !== ''; 
+    if (field === 'amount') return !value || !isNaN(value); 
+    return false;
   };
+
+  const categories = [
+    { name: 'Еда', icon: <FoodIcon /> },
+    { name: 'Транспорт', icon: <TransportIcon /> },
+    { name: 'Жилье', icon: <HousingIcon /> },
+    { name: 'Развлечения', icon: <EntertainmentIcon /> },
+    { name: 'Образование', icon: <EducationIcon /> },
+    { name: 'Другое', icon: <OtherIcon /> },
+  ];
 
   return (
     <>
-      <FormTitle>{editData ? 'Редактирование расхода' : 'Новый расход'}</FormTitle>
+      <FormTitle>{editData ? 'Редактирование' : 'Новый расход'}</FormTitle>
       <form onSubmit={handleSubmit}>
+        <FieldLabel>Описание</FieldLabel>
         <FormInput
           name="description"
           value={formData.description}
@@ -119,32 +206,31 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
           valid={isValidInput(formData.description, 'description')}
           editing={!!editData}
         />
-        {errors.description && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.description}</p>}
-        <FormSelect
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          selected={formData.category !== ''}
-          editing={!!editData}
-        >
-          <option value="">Выберите категорию</option>
-          <option value="Еда">Еда</option>
-          <option value="Транспорт">Транспорт</option>
-          <option value="Жилье">Жилье</option>
-          <option value="Развлечения">Развлечения</option>
-          <option value="Образование">Образование</option>
-          <option value="Другое">Другое</option>
-        </FormSelect>
-        {errors.category && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.category}</p>}
-        <FormInput
+        {errors.description && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px', marginLeft: '20px' }}>{errors.description}</p>}
+        <FieldLabel>Категории</FieldLabel>
+        {categories.map((cat) => (
+          <CategoryButton
+            key={cat.name}
+            selected={formData.category === cat.name}
+            onClick={() => handleCategorySelect(cat.name)}
+          >
+            {cat.icon}
+            {cat.name}
+          </CategoryButton>
+        ))}
+        {errors.category && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '5px', marginBottom: '10px', marginLeft: '20px' }}>{errors.category}</p>}
+        <FieldLabel>Дата</FieldLabel>
+        <DateInput
           type="date"
           name="date"
           value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
           onChange={handleChange}
+          placeholder="Введите дату"
           valid={isValidInput(formData.date, 'date')}
           editing={!!editData}
         />
-        {errors.date && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.date}</p>}
+        {errors.date && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px', marginLeft: '20px' }}>{errors.date}</p>}
+        <FieldLabel>Сумма</FieldLabel>
         <FormInput
           name="amount"
           value={formData.amount}
@@ -153,9 +239,9 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
           valid={isValidInput(formData.amount, 'amount')}
           editing={!!editData}
         />
-        {errors.amount && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px' }}>{errors.amount}</p>}
+        {errors.amount && <p style={{ color: '#ff4444', fontSize: '12px', marginTop: '-10px', marginBottom: '10px', marginLeft: '20px' }}>{errors.amount}</p>}
         <FormButton type="submit">{editData ? 'Сохранить редактирование' : 'Добавить новый расход'}</FormButton>
-        {editData && <FormButton onClick={onCancel}>Отмена</FormButton>}
+        {editData && <FormButton onClick={onCancel} style={{ background: '#fff', color: '#333', border: '0.5px solid #999999' }}>Отмена</FormButton>}
       </form>
     </>
   );
