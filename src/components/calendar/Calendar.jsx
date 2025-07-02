@@ -14,37 +14,93 @@ import YearView from './YearView/YearView.jsx';
 import { formatDate, formatMonth } from './dateUtils';
 import { WEEKDAYS_SHORT } from './constants/constant.js';
 
+/**
+ * Календарь для выбора периода (месяц или год)
+ * Позволяет выбрать диапазон дат или месяцев и сообщает выбранный период через onPeriodChange
+ */
 const Calendar = ({ onPeriodChange }) => {
+  // Режим отображения: 'month' — по дням, 'year' — по месяцам
   const [viewMode, setViewMode] = useState('month');
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [startMonth, setStartMonth] = useState(null);
-  const [endMonth, setEndMonth] = useState(null);
 
-  const selectDay = (date) => {
-    let newStartDate = startDate;
-    let newEndDate = endDate;
-    
-    if (!startDate || (startDate && endDate)) {
-      newStartDate = date;
-      newEndDate = null;
+  // Для выбора диапазона дней
+  const [selectedStartDay, setSelectedStartDay] = useState(null);
+  const [selectedEndDay, setSelectedEndDay] = useState(null);
+
+  // Для выбора диапазона месяцев
+  const [selectedStartMonth, setSelectedStartMonth] = useState(null);
+  const [selectedEndMonth, setSelectedEndMonth] = useState(null);
+
+  /**
+   * Обработка клика по дню в режиме "месяц"
+   * Позволяет выбрать диапазон дат (от и до)
+   */
+  function handleDayClick(date) {
+    let start = selectedStartDay;
+    let end = selectedEndDay;
+
+    if (start && end) {
+      // Если уже выбран диапазон — сбрасываем выбор (3-й клик)
+      setSelectedStartDay(null);
+      setSelectedEndDay(null);
+      updatePeriodLabel(null, null);
+      return;
+    }
+    if (!start) {
+      // Если ничего не выбрано — выбираем старт
+      start = date;
+      end = null;
     } else {
-      if (new Date(date) < new Date(startDate)) {
-        newEndDate = startDate;
-        newStartDate = date;
+      // Если выбран только старт — определяем конец диапазона
+      if (new Date(date) < new Date(start)) {
+        end = start;
+        start = date;
       } else {
-        newEndDate = date;
+        end = date;
       }
     }
+    setSelectedStartDay(start);
+    setSelectedEndDay(end);
+    updatePeriodLabel(start, end);
+  }
 
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-    updatePeriodDisplay(newStartDate, newEndDate);
-  };
+  /**
+   * Обработка клика по месяцу в режиме "год"
+   * Позволяет выбрать диапазон месяцев (от и до)
+   */
+  function handleMonthClick(year, month) {
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    let start = selectedStartMonth;
+    let end = selectedEndMonth;
 
-  const updatePeriodDisplay = (start, end) => {
+    if (start && end) {
+      // Если уже выбран диапазон — сбрасываем выбор
+      setSelectedStartMonth(null);
+      setSelectedEndMonth(null);
+      updatePeriodLabel(null, null);
+      return;
+    }
+    if (!start) {
+      setSelectedStartMonth(monthKey);
+      updatePeriodLabel(monthKey, null);
+    } else {
+      // Определяем порядок месяцев
+      const [startYear, startMonth] = start.split('-').map(Number);
+      if (year < startYear || (year === startYear && month < startMonth)) {
+        setSelectedEndMonth(start);
+        setSelectedStartMonth(monthKey);
+        updatePeriodLabel(monthKey, start);
+      } else {
+        setSelectedEndMonth(monthKey);
+        updatePeriodLabel(start, monthKey);
+      }
+    }
+  }
+
+  /**
+   * Обновляет отображаемый период и сообщает его родителю
+   */
+  function updatePeriodLabel(start, end) {
     if (!onPeriodChange) return;
-    
     if (viewMode === 'month') {
       if (start && end) {
         onPeriodChange(`${formatDate(start)} - ${formatDate(end)}`);
@@ -62,55 +118,29 @@ const Calendar = ({ onPeriodChange }) => {
         onPeriodChange('');
       }
     }
-  };
+  }
 
-  const selectMonth = (year, month) => {
-    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-    
-    if (startMonth && endMonth) {
-      setStartMonth(null);
-      setEndMonth(null);
-      updatePeriodDisplay(null, null);
-      return;
-    }
-    
-    if (!startMonth) {
-      setStartMonth(monthKey);
-    } else {
-      const [y1, m1] = startMonth.split('-').map(Number);
-      if (year < y1 || (year === y1 && month < m1)) {
-        setEndMonth(startMonth);
-        setStartMonth(monthKey);
-      } else {
-        setEndMonth(monthKey);
-      }
-    }
-    
-    updatePeriodDisplay(
-      startMonth ? startMonth : monthKey,
-      startMonth ? monthKey : null
-    );
-  };
-
+  // --- UI ---
   return (
     <CalendarWrapper>
+      {/* Заголовок и переключатель режима */}
       <CalendarHeader>
         <CalendarTitle>Период</CalendarTitle>
         <ViewToggle>
-          <ToggleButton 
-            $isActive={viewMode === 'month'} 
+          <ToggleButton
+            $isActive={viewMode === 'month'}
             onClick={() => {
               setViewMode('month');
-              updatePeriodDisplay(startDate, endDate);
+              updatePeriodLabel(selectedStartDay, selectedEndDay);
             }}
           >
             Месяц
           </ToggleButton>
-          <ToggleButton 
-            $isActive={viewMode === 'year'} 
+          <ToggleButton
+            $isActive={viewMode === 'year'}
             onClick={() => {
               setViewMode('year');
-              updatePeriodDisplay(startMonth, endMonth);
+              updatePeriodLabel(selectedStartMonth, selectedEndMonth);
             }}
           >
             Год
@@ -118,47 +148,50 @@ const Calendar = ({ onPeriodChange }) => {
         </ViewToggle>
       </CalendarHeader>
 
+      {/* В зависимости от режима — показываем дни или месяцы */}
       {viewMode === 'month' ? (
         <>
+          {/* Заголовки дней недели */}
           <WeekdaysHeader>
             {WEEKDAYS_SHORT.map(day => (
               <Weekday key={day}>{day}</Weekday>
             ))}
           </WeekdaysHeader>
-          
+
+          {/* Несколько месяцев для выбора дат */}
           <ScrollContainer>
-            <MonthView 
-              month={7} 
-              year={2024} 
-              title="Июль 2024" 
-              startDate={startDate}
-              endDate={endDate}
-              onDayClick={selectDay}
+            <MonthView
+              month={7}
+              year={2024}
+              title="Июль 2024"
+              startDate={selectedStartDay}
+              endDate={selectedEndDay}
+              onDayClick={handleDayClick}
             />
-            <MonthView 
-              month={8} 
-              year={2024} 
-              title="Август 2024" 
-              startDate={startDate}
-              endDate={endDate}
-              onDayClick={selectDay}
+            <MonthView
+              month={8}
+              year={2024}
+              title="Август 2024"
+              startDate={selectedStartDay}
+              endDate={selectedEndDay}
+              onDayClick={handleDayClick}
             />
-            <MonthView 
-              month={9} 
-              year={2024} 
-              title="Сентябрь 2024" 
-              startDate={startDate}
-              endDate={endDate}
-              onDayClick={selectDay}
+            <MonthView
+              month={9}
+              year={2024}
+              title="Сентябрь 2024"
+              startDate={selectedStartDay}
+              endDate={selectedEndDay}
+              onDayClick={handleDayClick}
             />
           </ScrollContainer>
         </>
       ) : (
-        <YearView 
+        <YearView
           years={[2024, 2025]}
-          startMonth={startMonth}
-          endMonth={endMonth}
-          onMonthClick={selectMonth}
+          startMonth={selectedStartMonth}
+          endMonth={selectedEndMonth}
+          onMonthClick={handleMonthClick}
         />
       )}
     </CalendarWrapper>

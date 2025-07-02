@@ -1,35 +1,32 @@
 import { MONTH_NAMES, MONTH_NAMES_GENITIVE } from './constants/constant.js';
 
-export const formatDate = (dateStr) => {
+// Преобразует дату (строкой или Date) в формат '5 июля 2024'
+export function formatDate(dateStr) {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   const day = date.getDate();
-  const month = date.getMonth() + 1;
+  const month = date.getMonth(); // 0-11
   const year = date.getFullYear();
-  return `${day} ${getMonthName(month)} ${year}`;
-};
+  return `${day} ${MONTH_NAMES_GENITIVE[month]} ${year}`;
+}
 
-export const formatMonth = (monthKey) => {
+// Преобразует ключ месяца '2024-07' в 'Июль 2024'
+export function formatMonth(monthKey) {
   if (!monthKey) return '';
   const [year, month] = monthKey.split('-').map(Number);
-  return `${getMonthName(month, true)} ${year}`;
-};
+  return `${MONTH_NAMES[month - 1]} ${year}`;
+}
 
-export const getMonthName = (month, fullForm = false) => {
-  return fullForm ? MONTH_NAMES[month - 1] : MONTH_NAMES_GENITIVE[month - 1];
-};
+// Проверяет, входит ли дата в диапазон (включительно)
+export function isDateInRange(date, start, end) {
+  if (!start || !end) return false;
+  const d = new Date(date);
+  return d >= new Date(start) && d <= new Date(end);
+}
 
-export const isDateInRange = (date, startDate, endDate) => {
-  if (!startDate || !endDate) return false;
-  const current = new Date(date);
-  return current >= new Date(startDate) && current <= new Date(endDate);
-};
-
-export const isMonthInRange = (year, month, startMonth, endMonth) => {
+// Проверяет, входит ли месяц (год+месяц) в диапазон месяцев
+export function isMonthInRange(year, month, startMonth, endMonth) {
   if (!startMonth || !endMonth) return false;
-  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-  const start = new Date(`${startMonth}-01`);
-  const end = new Date(`${endMonth}-01`);
-  const current = new Date(`${monthKey}-01`);
-  return current >= start && current <= end;
-};
+  const mKey = `${year}-${String(month).padStart(2, '0')}`;
+  return mKey >= startMonth && mKey <= endMonth;
+}
