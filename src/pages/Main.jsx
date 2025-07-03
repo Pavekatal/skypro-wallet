@@ -14,12 +14,12 @@ const Container = styled.div`
   background: #f5f5f5;
   min-height: calc(100vh - 64px);
   width: 100%;
-  position: relative;
 `;
 
 // Обертка содержимого
 const ContentWrapper = styled.div`
   display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 1200px;
   gap: 20px;
@@ -28,21 +28,32 @@ const ContentWrapper = styled.div`
   }
 `;
 
+// Новый блок для заголовка и таблицы
+const MainContent = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
 // Заголовок страницы "Мои расходы"
 const MainTitle = styled.h2`
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #000000;
-  height: 48px;
-  position: absolute;
-  top: 100px;
-  left: 120px;
   padding: 5px 10px;
   border-radius: 8px;
-  z-index: 1;
-  background: #d3d3d3;
-  line-height: 150%; 
+  line-height: 150%;
+  margin-bottom: 20px;
+`;
+
+// Новый блок для таблицы и формы
+const TableAndFormWrapper = styled.div`
+  display: flex;
+  gap: 20px;
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 // Секция таблицы
@@ -55,24 +66,20 @@ const TableSection = styled.div`
   min-width: 789px;
   max-width: 789px;
   overflow-y: auto;
-  margin-top: 80px; 
   &::-webkit-scrollbar {
     width: 6px;
-    height: 100%; 
-    position: absolute;
-    top: 197px; 
-    left: 783px; 
-    border-radius: 30px; 
+    height: 100%;
+    border-radius: 30px;
   }
   &::-webkit-scrollbar-track {
-    background: #D9D9D9;
+    background: #d9d9d9;
   }
   &::-webkit-scrollbar-thumb {
     background: #bbbbbb;
-    border-radius: 30px; 
+    border-radius: 30px;
   }
   &::-webkit-scrollbar-thumb:hover {
-    background: #B0B0B0; 
+    background: #b0b0b0;
   }
 `;
 
@@ -96,13 +103,13 @@ const FormSection = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 300px;
   max-width: 30%;
-  margin-top: 80px;
 `;
 
 // Обертка для заголовка и фильтров
 const TableControlsWrapper = styled.div`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
   margin-bottom: 20px;
 `;
@@ -165,35 +172,53 @@ const MainPage = () => {
     setEditData(null);
   };
 
+  // Фильтрация и сортировка расходов
+  const filteredAndSortedExpenses = expenses
+    .filter((expense) => (
+      filterCategory ? expense.category === filterCategory : true
+    ))
+    .sort((a, b) => {
+      if (sortBy === 'date') {
+        return new Date(b.date) - new Date(a.date);
+      } else if (sortBy === 'amount') {
+        return b.amount - a.amount;
+      }
+      return 0;
+    });
+
   return (
     <>
       <Header currentPath="/" />
-      <MainTitle>Мои расходы</MainTitle>
       <Container>
         <ContentWrapper>
-          <TableSection>
-            <TableControlsWrapper>
-              <TableTitle>Таблица расходов</TableTitle>
-              <FilterControls
-                filterCategory={filterCategory}
-                setFilterCategory={setFilterCategory}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-              />
-            </TableControlsWrapper>
-            <ExpenseTable
-              expenses={expenses}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          </TableSection>
-          <FormSection>
-            <ExpenseForm
-              editData={editData}
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-            />
-          </FormSection>
+          <MainContent>
+            <MainTitle>Мои расходы</MainTitle>
+            <TableAndFormWrapper>
+              <TableSection>
+                <TableControlsWrapper>
+                  <TableTitle>Таблица расходов</TableTitle>
+                  <FilterControls
+                    filterCategory={filterCategory}
+                    setFilterCategory={setFilterCategory}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                  />
+                </TableControlsWrapper>
+                <ExpenseTable
+                  expenses={filteredAndSortedExpenses}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </TableSection>
+              <FormSection>
+                <ExpenseForm
+                  editData={editData}
+                  onSubmit={handleFormSubmit}
+                  onCancel={handleFormCancel}
+                />
+              </FormSection>
+            </TableAndFormWrapper>
+          </MainContent>
         </ContentWrapper>
         <Outlet />
       </Container>

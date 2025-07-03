@@ -1,110 +1,209 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
-// Обёртка для контролов фильтрации и сортировки
+// Импортируем иконки
+import {
+  FoodIcon,
+  TransportIcon,
+  HousingIcon,
+  EntertainmentIcon,
+  EducationIcon,
+  OtherIcon
+} from '../components/Icons.jsx';
+
+// ==== Стили ====
 const ControlsWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 130px;
+  justify-content: space-between;
+  padding: 10px 0;
 `;
 
-// Стилизованный Label (фильтр/сортировка)
 const Label = styled.label`
+  display: flex;
+  flex-direction: column;
   font-size: 12px;
   color: #000000;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  width: ${props => (props.type === 'filter' ? '168px' : '100px')};
-  height: 18px;
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
 `;
 
-// Стилизованный Select (фильтр/сортировка)
-const Select = styled.select`
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
-  border: none;
-  background: none;
-  color: #000000;
-  transition: border-color 0.3s ease;
-  width: ${props => (props.type === 'filter' ? '168px' : '100px')};
-  height: 18px;
-  appearance: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+const SelectWrapper = styled.div`
   position: relative;
+  margin-top: 5px;
+`;
 
+const TriggerButton = styled.button`
+  width: 160px;
+  height: 30px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 12px;
+  color: #000;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  padding-left: 8px;
   &:focus {
     outline: none;
   }
+`;
 
-  &:after {
+const Arrow = styled.span`
+  position: absolute;
+  right: 10px;
+  top: 9px;
+  width: 7px;
+  height: 6px;
+  &::after {
     content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
+    display: block;
     width: 0;
-    height: 2px;
-    background: #1FA46C;
-    transition: width 0.3s ease;
-  }
-
-  &:focus:after,
-  &:hover:after {
-    width: 100%;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid black;
   }
 `;
 
-// Стилизованный SVG (стрелочка)
-const Arrow = styled.svg`
-  margin-left: 2px;
+const Dropdown = styled.div`
+  position: absolute;
+  top: 35px;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
 `;
 
+const CategoryButton = styled.button`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 15px;
+  margin: 2px 0;
+  border: none;
+  border-radius: 4px;
+  background: #f4f5f6;
+  color: #333;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  svg {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    background: #e0e0e0;
+  }
+
+  ${({ selected }) =>
+    selected &&
+    `
+      background: #DBFFE9;
+      color: #1FA46C;
+      svg path {
+        fill: #1FA46C;
+      }
+      &:hover {
+        background: #C1FFD6;
+      }
+    `}
+`;
+
+const SortButton = styled(CategoryButton)`
+  justify-content: flex-start;
+`;
+
+// ==== Компонент FilterControls ====
 const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }) => {
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+
+  // Список категорий
+  const categories = [
+    { name: 'Все', icon: null },
+    { name: 'Еда', icon: <FoodIcon /> },
+    { name: 'Транспорт', icon: <TransportIcon /> },
+    { name: 'Жилье', icon: <HousingIcon /> },
+    { name: 'Развлечения', icon: <EntertainmentIcon /> },
+    { name: 'Образование', icon: <EducationIcon /> },
+    { name: 'Другое', icon: <OtherIcon /> },
+  ];
+
+  // Список сортировок
+  const sortOptions = [
+    { value: '', label: 'Нет' },
+    { value: 'date', label: 'Дата' },
+    { value: 'amount', label: 'Сумма' },
+  ];
+
   return (
     <ControlsWrapper>
-      <Label type="filter">
-        Фильтровать по категории
-        <Arrow width="7" height="6" viewBox="0 0 7 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3.5 5.5L0.468911 0.25L6.53109 0.25L3.5 5.5Z" fill="black"/>
-        </Arrow>
+      <Label>
+        Фильтровать по
+        <SelectWrapper type="filter">
+          <TriggerButton
+            type="button"
+            onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+          >
+            {filterCategory || 'категории'}
+            <Arrow />
+          </TriggerButton>
+
+          {showCategoryDropdown && (
+            <Dropdown>
+              {categories.map((cat) => (
+                <CategoryButton
+                  key={cat.name}
+                  selected={filterCategory === cat.name}
+                  onClick={() => {
+                    setFilterCategory(cat.name);
+                    setShowCategoryDropdown(false);
+                  }}
+                >
+                  {cat.icon && <span>{cat.icon}</span>}
+                  {cat.name}
+                </CategoryButton>
+              ))}
+            </Dropdown>
+          )}
+        </SelectWrapper>
       </Label>
-      <Select
-        type="filter"
-        value={filterCategory}
-        onChange={(e) => setFilterCategory(e.target.value)}
-      >
-        <option value="">Все</option>
-        <option value="Еда">Еда</option>
-        <option value="Транспорт">Транспорт</option>
-        <option value="Жилье">Жилье</option>
-        <option value="Развлечения">Развлечения</option>
-        <option value="Образование">Образование</option>
-        <option value="Другое">Другое</option>
-      </Select>
-      <Label type="sort">
+
+      <Label>
         Сортировать по
-        <Arrow width="7" height="6" viewBox="0 0 7 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3.5 5.5L0.468911 0.25L6.53109 0.25L3.5 5.5Z" fill="black"/>
-        </Arrow>
+        <SelectWrapper type="sort">
+          <TriggerButton
+            type="button"
+            onClick={() => setShowSortDropdown(!showSortDropdown)}
+          >
+            {sortOptions.find((opt) => opt.value === sortBy)?.label || 'Нет'}
+            <Arrow />
+          </TriggerButton>
+
+          {showSortDropdown && (
+            <Dropdown>
+              {sortOptions.map((opt) => (
+                <SortButton
+                  key={opt.value}
+                  selected={sortBy === opt.value}
+                  onClick={() => {
+                    setSortBy(opt.value);
+                    setShowSortDropdown(false);
+                  }}
+                >
+                  {opt.label}
+                </SortButton>
+              ))}
+            </Dropdown>
+          )}
+        </SelectWrapper>
       </Label>
-      <Select
-        type="sort"
-        value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-      >
-        <option value="">Нет</option>
-        <option value="date">Дата</option>
-        <option value="amount">Сумма</option>
-      </Select>
     </ControlsWrapper>
   );
 };
