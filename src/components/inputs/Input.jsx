@@ -10,10 +10,7 @@ const Input = ({
   autoFocus = true,
   value = "",
   onChange,
-  showStar = false,
 }) => {
-  const shouldShowStar = showStar;
-
   return (
     <SInput
       type={type}
@@ -26,7 +23,6 @@ const Input = ({
       value={value}
       autoComplete="current-password"
       $statusInput={statusInput}
-      $showStar={shouldShowStar}
     />
   );
 };

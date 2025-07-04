@@ -1,10 +1,15 @@
 import styled from "styled-components";
 
+export const InputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+`;
+
 export const SInput = styled.input`
   width: 100%;
   min-width: 100%;
   height: 39px;
-  position: relative;
   padding: 12px;
   outline: none;
   box-sizing: border-box;
