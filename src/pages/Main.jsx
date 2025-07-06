@@ -155,7 +155,7 @@ const MainPage = () => {
           id: item._id,
           amount: item.sum,
           description: item.description,
-          date: new Date(item.date), // API возвращает ISO дату
+          date: new Date(item.date),
           displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
           displayCategory: categoryMap[item.category] || item.category,
         }));
@@ -223,7 +223,7 @@ const MainPage = () => {
   const handleFormSubmit = async (data) => {
     if (!user?.token) {
       toast.error('Токен отсутствует, пожалуйста, войдите в систему');
-      return;
+      return { success: false };
     }
     try {
       // Проверка данных перед отправкой
@@ -233,7 +233,6 @@ const MainPage = () => {
       if (!reverseCategoryMap[data.displayCategory]) {
         throw new Error('Неверная категория');
       }
-      // Преобразуем дату в ISO-формат (2025-01-06T00:00:00.000Z)
       let parsedDate;
       try {
         parsedDate = parse(data.date, 'yyyy-MM-dd', new Date());
@@ -247,7 +246,7 @@ const MainPage = () => {
         sum: Number(data.amount),
         description: data.description,
         category: reverseCategoryMap[data.displayCategory],
-        date: isoDate, // Отправляем ISO-дату
+        date: isoDate,
       };
       const updatedList = await addOrUpdateTransaction(formattedData, user.token);
       const formattedExpenses = updatedList.map((item) => ({
@@ -262,6 +261,7 @@ const MainPage = () => {
       setExpenses(formattedExpenses);
       setSelectedId(null);
       setEditData(null);
+      return { success: true }; // Возвращаем флаг успеха
     } catch (error) {
       if (error.message.includes('401')) {
         toast.error('Пожалуйста, войдите в систему');
@@ -270,6 +270,7 @@ const MainPage = () => {
       } else {
         toast.error(error.message || 'Ошибка при сохранении транзакции');
       }
+      return { success: false }; // Возвращаем флаг неудачи
     }
   };
 

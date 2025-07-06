@@ -97,22 +97,42 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
 
   const validateForm = () => {
     const newErrors = {};
+
+    // Валидация description
     if (!formData.description.trim()) {
-      newErrors.description = 'Описание обязательно';
+      newErrors.description = 'Поле description обязательно для заполнения';
     } else if (formData.description.trim().length < 4) {
-      newErrors.description = 'Описание должно быть минимум 4 символа';
+      newErrors.description = 'Поле description должно содержать минимум 4 символа';
     }
+
+    // Валидация category
     if (!formData.displayCategory) {
-      newErrors.displayCategory = 'Категория обязательна';
+      newErrors.displayCategory = 'Поле category обязательно для заполнения';
+    } else if (!Object.keys(categoryMap).includes(formData.displayCategory)) {
+      newErrors.displayCategory =
+        'Для category допустимы только значения Еда, Транспорт, Жилье, Развлечения, Образование, Другое';
     }
+
+    // Валидация date
     if (!formData.date) {
-      newErrors.date = 'Дата обязательна';
+      newErrors.date = 'Поле date обязательно для заполнения';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      newErrors.date = 'Неверный формат даты';
+      newErrors.date = 'Поле date должно быть в формате yyyy-MM-dd';
+    } else {
+      try {
+        parse(formData.date, 'yyyy-MM-dd', new Date());
+      } catch {
+        newErrors.date = 'Поле date должно быть валидной датой';
+      }
     }
-    if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) {
-      newErrors.amount = 'Сумма должна быть положительным числом';
+
+    // Валидация amount
+    if (!formData.amount) {
+      newErrors.amount = 'Поле sum обязательно для заполнения';
+    } else if (isNaN(formData.amount) || Number(formData.amount) <= 0) {
+      newErrors.amount = 'Поле sum должно быть положительным числом';
     }
+
     return newErrors;
   };
 
@@ -127,26 +147,44 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     setErrors({ ...errors, displayCategory: '' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      onSubmit({
+      console.log('Данные формы перед отправкой:', formData);
+      const result = await onSubmit({
         ...formData,
         id: formData.id,
         amount: parseInt(formData.amount, 10),
         category: categoryMap[formData.displayCategory],
         displayDate: formData.date,
       });
+      // Очищаем форму только при успешном добавлении новой транзакции
+      if (result.success && !editData) {
+        setFormData({ description: '', displayCategory: '', date: '', amount: '' });
+        setErrors({});
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   const isValidInput = (value, field) => {
-    if (field === 'description') return value.trim() !== '' && value.trim().length >= 4;
-    if (field === 'date') return value !== '' && /^\d{4}-\d{2}-\d{2}$/.test(value);
-    if (field === 'amount') return value && !isNaN(value) && Number(value) > 0;
+    if (field === 'description') {
+      return value.trim() !== '' && value.trim().length >= 4;
+    }
+    if (field === 'date') {
+      if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      try {
+        parse(value, 'yyyy-MM-dd', new Date());
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (field === 'amount') {
+      return value && !isNaN(value) && Number(value) > 0;
+    }
     return false;
   };
 
