@@ -1,234 +1,148 @@
-import axios from 'axios';
 import { format, parse } from 'date-fns';
 
-// Базовый URL API
-const API_BASE_URL = 'https://wedev-api.sky.pro/api';
+const validCategories = ['food', 'transport', 'housing', 'joy', 'education', 'others'];
 
-// Создание экземпляра axios
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Моковые данные (временные, для отображения таблицы)
-let mockData = [
-  {
-    _id: '1',
-    userId: 'mock-user-id',
-    description: 'Пятерочка',
-    category: 'Food',
-    date: '7-3-2024',
-    sum: 3500,
-  },
-  {
-    _id: '2',
-    userId: 'mock-user-id',
-    description: 'Яндекс Такси',
-    category: 'Transport',
-    date: '7-3-2024',
-    sum: 730,
-  },
-  {
-    _id: '3',
-    userId: 'mock-user-id',
-    description: 'Аптека Вита',
-    category: 'Others',
-    date: '7-3-2024',
-    sum: 1200,
-  },
-  {
-    _id: '4',
-    userId: 'mock-user-id',
-    description: 'Бургер Кинг',
-    category: 'Food',
-    date: '7-3-2024',
-    sum: 950,
-  },
-  {
-    _id: '5',
-    userId: 'mock-user-id',
-    description: 'Деливери',
-    category: 'Food',
-    date: '7-2-2024',
-    sum: 1320,
-  },
-  {
-    _id: '6',
-    userId: 'mock-user-id',
-    description: 'Кофейня №1',
-    category: 'Food',
-    date: '7-2-2024',
-    sum: 400,
-  },
-  {
-    _id: '7',
-    userId: 'mock-user-id',
-    description: 'Билеты',
-    category: 'Entertainment',
-    date: '6-29-2024',
-    sum: 600,
-  },
-  {
-    _id: '8',
-    userId: 'mock-user-id',
-    description: 'Перекресток',
-    category: 'Food',
-    date: '6-29-2024',
-    sum: 2360,
-  },
-  {
-    _id: '9',
-    userId: 'mock-user-id',
-    description: 'Лукойл',
-    category: 'Transport',
-    date: '6-29-2024',
-    sum: 1000,
-  },
-  {
-    _id: '10',
-    userId: 'mock-user-id',
-    description: 'Летуаль',
-    category: 'Others',
-    date: '6-29-2024',
-    sum: 4300,
-  },
-];
-
-// Функция для добавления или обновления транзакции
 export const addOrUpdateTransaction = async (transactionData, token) => {
   try {
     if (!token) throw new Error('Токен отсутствует');
-
-    const formattedData = {
-      description: transactionData.description,
-      sum: Number(transactionData.sum),
-      category: transactionData.category,
-      date: format(new Date(transactionData.date), 'M-d-yyyy'),
-    };
-
-    // Временная работа с моковыми данными
-    const updatedTransaction = {
-      ...formattedData,
-      _id: transactionData._id || String(Date.now()),
-      userId: 'mock-user-id',
-    };
-    if (transactionData._id) {
-      mockData = mockData.map((item) =>
-        item._id === transactionData._id ? updatedTransaction : item
-      );
-    } else {
-      mockData.push(updatedTransaction);
+    if (!validCategories.includes(transactionData.category)) {
+      throw new Error('Неверная категория');
     }
-    return mockData;
+    if (transactionData.description.length < 4) {
+      throw new Error('Описание должно быть минимум 4 символа');
+    }
+    if (transactionData.sum <= 0 || isNaN(transactionData.sum)) {
+      throw new Error('Сумма должна быть положительным числом');
+    }
+    // Проверка формата даты (ожидаем ISO, например, 2025-01-06T00:00:00.000Z)
+    try {
+      new Date(transactionData.date); // Проверяем, что дата валидна
+    } catch {
+      throw new Error('Неверный формат даты');
+    }
 
-    // Раскомментировать для реального API, когда сервер будет работать
-    /*
-    const method = transactionData._id ? 'patch' : 'post';
-    const url = transactionData._id ? `/transactions/${transactionData._id}` : '/transactions';
-    const response = await apiClient({
+    const url = transactionData._id
+      ? `https://wedev-api.sky.pro/api/transactions/${transactionData._id}`
+      : 'https://wedev-api.sky.pro/api/transactions';
+    const method = transactionData._id ? 'PATCH' : 'POST';
+
+    const response = await fetch(url, {
       method,
-      url,
-      data: formattedData,
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        description: transactionData.description,
+        sum: Number(transactionData.sum),
+        category: transactionData.category,
+        date: transactionData.date, // Отправляем ISO дату
+      }),
     });
-    return response.data || [];
-    */
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 400) {
+        throw new Error(errorData.message || 'Неверные данные транзакции');
+      }
+      if (response.status === 401) {
+        throw new Error('Требуется авторизация');
+      }
+      throw new Error(`Ошибка сервера: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    // API возвращает { transactions: [...] }, извлекаем массив
+    return responseData.transactions || [];
   } catch (error) {
-    console.error('Ошибка при добавлении/обновлении транзакции:', error);
-    throw error.response?.data?.error || 'Ошибка сервера';
+    throw error.message || 'Ошибка сервера';
   }
 };
 
-// Функция для получения списка транзакций
 export const getTransactions = async (filters = {}, token) => {
   try {
     if (!token) throw new Error('Токен отсутствует');
 
-    // Временная работа с моковыми данными
-    return mockData
-      .filter((expense) =>
-        filters.filterBy ? filters.filterBy.split(',').includes(expense.category) : true
-      )
-      .sort((a, b) => {
-        if (filters.sortBy === 'date') {
-          return parse(b.date, 'M-d-yyyy', new Date()) - parse(a.date, 'M-d-yyyy', new Date());
-        } else if (filters.sortBy === 'sum') {
-          return b.sum - a.sum;
-        }
-        return 0;
-      });
+    const query = new URLSearchParams();
+    if (filters.sortBy) query.set('sortBy', filters.sortBy);
+    if (filters.filterBy) query.set('filterBy', filters.filterBy);
 
-    // Раскомментировать для реального API
-    /*
-    const response = await apiClient.get('/transactions', {
-      params: {
-        sortBy: filters.sortBy || undefined,
-        filterBy: filters.filterBy || undefined,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await fetch(`https://wedev-api.sky.pro/api/transactions?${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    return response.data || [];
-    */
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 400) {
+        throw new Error(errorData.message || 'Неверные параметры запроса');
+      }
+      if (response.status === 401) {
+        throw new Error('Требуется авторизация');
+      }
+      throw new Error(`Ошибка сервера: ${response.status}`);
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Ошибка при загрузке транзакций:', error);
-    throw error.response?.data?.error || 'Ошибка сервера';
+    throw error.message || 'Ошибка сервера';
   }
 };
 
-// Функция для удаления транзакции
 export const deleteTransaction = async (id, token) => {
   try {
     if (!token) throw new Error('Токен отсутствует');
 
-    // Временная работа с моковыми данными
-    mockData = mockData.filter((item) => item._id !== id);
-    return mockData;
-
-    // Раскомментировать для реального API
-    /*
-    const response = await apiClient.delete(`/transactions/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await fetch(`https://wedev-api.sky.pro/api/transactions/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
     });
-    return response.data || [];
-    */
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 400) {
+        throw new Error(errorData.message || 'Транзакция не найдена');
+      }
+      if (response.status === 401) {
+        throw new Error('Требуется авторизация');
+      }
+      throw new Error(`Ошибка сервера: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    // API возвращает { transactions: [...] }, извлекаем массив
+    return responseData.transactions || [];
   } catch (error) {
-    console.error('Ошибка при удалении транзакции:', error);
-    throw error.response?.data?.error || 'Ошибка сервера';
+    throw error.message || 'Ошибка сервера';
   }
 };
 
-// Функция для получения транзакций за период
 export const getTransactionsByPeriod = async (period, token) => {
   try {
     if (!token) throw new Error('Токен отсутствует');
 
-    // Временная работа с моковыми данными
-    const startDate = parse(period.start, 'M-d-yyyy', new Date());
-    const endDate = parse(period.end, 'M-d-yyyy', new Date());
-    return mockData.filter((expense) => {
-      const expenseDate = parse(expense.date, 'M-d-yyyy', new Date());
-      return expenseDate >= startDate && expenseDate <= endDate;
-    });
-
-    // Раскомментировать для реального API
-    /*
-    const response = await apiClient.post('/transactions/period', period, {
+    const response = await fetch('https://wedev-api.sky.pro/api/transactions/period', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        start: period.start,
+        end: period.end,
+      }),
     });
-    return response.data || [];
-    */
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 400) {
+        throw new Error(errorData.message || 'Неверный период');
+      }
+      if (response.status === 401) {
+        throw new Error('Требуется авторизация');
+      }
+      throw new Error(`Ошибка сервера: ${response.status}`);
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Ошибка при загрузке транзакций за период:', error);
-    throw error.response?.data?.error || 'Ошибка сервера';
+    throw error.message || 'Ошибка сервера';
   }
 };

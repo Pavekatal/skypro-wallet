@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FoodIcon, TransportIcon, HousingIcon, EntertainmentIcon, EducationIcon, OtherIcon } from '../components/Icons.jsx';
 import { Input, Button, ErrorMessage } from '../components/CommonComponents.jsx';
+import { format, parse } from 'date-fns';
+
+// Маппинг категорий для UI и API
+const categoryMap = {
+  Еда: 'food',
+  Транспорт: 'transport',
+  Жилье: 'housing',
+  Развлечения: 'joy',
+  Образование: 'education',
+  Другое: 'others',
+};
 
 // Стили для заголовка формы
 const FormTitle = styled.h3`
@@ -36,12 +47,15 @@ const CategoryButton = styled.button`
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+
   svg {
     margin-right: 6px;
   }
+
   &:hover {
     background: #e0e0e0;
   }
+
   ${({ selected }) =>
     selected &&
     `
@@ -59,9 +73,9 @@ const CategoryButton = styled.button`
 const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     description: '',
-    category: '',
+    displayCategory: '',
     date: '',
-    amount: ''
+    amount: '',
   });
   const [errors, setErrors] = useState({});
 
@@ -70,21 +84,35 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
       setFormData({
         id: editData.id || undefined,
         description: editData.description || '',
-        category: editData.category || '',
-        date: editData.date || '',
-        amount: editData.amount || ''
+        displayCategory: editData.displayCategory || '',
+        date: editData.displayDate
+          ? format(parse(editData.displayDate, 'dd.MM.yyyy', new Date()), 'yyyy-MM-dd')
+          : '',
+        amount: editData.amount ? editData.amount.toString() : '',
       });
     } else {
-      setFormData({ description: '', category: '', date: '', amount: '' });
+      setFormData({ description: '', displayCategory: '', date: '', amount: '' });
     }
   }, [editData]);
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.description.trim()) newErrors.description = 'Описание обязательно';
-    if (!formData.category) newErrors.category = 'Категория обязательна';
-    if (!formData.date) newErrors.date = 'Дата обязательна';
-    if (formData.amount && isNaN(formData.amount)) newErrors.amount = 'Сумма должна быть числом';
+    if (!formData.description.trim()) {
+      newErrors.description = 'Описание обязательно';
+    } else if (formData.description.trim().length < 4) {
+      newErrors.description = 'Описание должно быть минимум 4 символа';
+    }
+    if (!formData.displayCategory) {
+      newErrors.displayCategory = 'Категория обязательна';
+    }
+    if (!formData.date) {
+      newErrors.date = 'Дата обязательна';
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
+      newErrors.date = 'Неверный формат даты';
+    }
+    if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) {
+      newErrors.amount = 'Сумма должна быть положительным числом';
+    }
     return newErrors;
   };
 
@@ -95,8 +123,8 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   };
 
   const handleCategorySelect = (category) => {
-    setFormData({ ...formData, category });
-    setErrors({ ...errors, category: '' });
+    setFormData({ ...formData, displayCategory: category });
+    setErrors({ ...errors, displayCategory: '' });
   };
 
   const handleSubmit = (e) => {
@@ -105,8 +133,10 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     if (Object.keys(newErrors).length === 0) {
       onSubmit({
         ...formData,
-        amount: formData.amount ? parseFloat(formData.amount) : 0,
-        date: new Date(formData.date).toISOString()
+        id: formData.id,
+        amount: parseInt(formData.amount, 10),
+        category: categoryMap[formData.displayCategory],
+        displayDate: formData.date,
       });
     } else {
       setErrors(newErrors);
@@ -114,9 +144,9 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   };
 
   const isValidInput = (value, field) => {
-    if (field === 'description') return value.trim() !== '';
-    if (field === 'date') return value !== '';
-    if (field === 'amount') return !value || !isNaN(value);
+    if (field === 'description') return value.trim() !== '' && value.trim().length >= 4;
+    if (field === 'date') return value !== '' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    if (field === 'amount') return value && !isNaN(value) && Number(value) > 0;
     return false;
   };
 
@@ -146,19 +176,19 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
         {categories.map((cat) => (
           <CategoryButton
             key={cat.name}
-            selected={formData.category === cat.name}
+            selected={formData.displayCategory === cat.name}
             onClick={() => handleCategorySelect(cat.name)}
           >
             {cat.icon}
             {cat.name}
           </CategoryButton>
         ))}
-        {errors.category && <ErrorMessage>{errors.category}</ErrorMessage>}
+        {errors.displayCategory && <ErrorMessage>{errors.displayCategory}</ErrorMessage>}
         <FieldLabel>Дата</FieldLabel>
         <Input
           type="date"
           name="date"
-          value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
+          value={formData.date}
           onChange={handleChange}
           placeholder="Введите дату"
           $valid={isValidInput(formData.date, 'date')}

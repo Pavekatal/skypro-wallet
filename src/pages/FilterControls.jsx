@@ -3,19 +3,23 @@ import styled from 'styled-components';
 import {
   FoodIcon,
   TransportIcon,
+  HousingIcon,
   EntertainmentIcon,
+  EducationIcon,
   OtherIcon,
 } from '../components/Icons.jsx';
 
 // Маппинг категорий
 const categoryMap = {
-  Food: 'Еда',
-  Transport: 'Транспорт',
-  Entertainment: 'Развлечения',
-  Others: 'Другое',
+  food: 'Еда',
+  transport: 'Транспорт',
+  housing: 'Жилье',
+  joy: 'Развлечения',
+  education: 'Образование',
+  others: 'Другое',
 };
 
-// ==== Стили ====
+// Стили
 const ControlsWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -123,7 +127,6 @@ const SortButton = styled(CategoryButton)`
   justify-content: flex-start;
 `;
 
-// ==== Компонент FilterControls ====
 const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }) => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -131,10 +134,12 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
   // Список категорий с английскими value и русскими label
   const categories = [
     { value: '', label: 'Все', icon: null },
-    { value: 'Food', label: 'Еда', icon: <FoodIcon /> },
-    { value: 'Transport', label: 'Транспорт', icon: <TransportIcon /> },
-    { value: 'Entertainment', label: 'Развлечения', icon: <EntertainmentIcon /> },
-    { value: 'Others', label: 'Другое', icon: <OtherIcon /> },
+    { value: 'food', label: 'Еда', icon: <FoodIcon /> },
+    { value: 'transport', label: 'Транспорт', icon: <TransportIcon /> },
+    { value: 'housing', label: 'Жилье', icon: <HousingIcon /> },
+    { value: 'joy', label: 'Развлечения', icon: <EntertainmentIcon /> },
+    { value: 'education', label: 'Образование', icon: <EducationIcon /> },
+    { value: 'others', label: 'Другое', icon: <OtherIcon /> },
   ];
 
   // Список сортировок
@@ -143,6 +148,29 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
     { value: 'date', label: 'Дата' },
     { value: 'sum', label: 'Сумма' },
   ];
+
+  // Обработка выбора категории
+  const handleCategorySelect = (value) => {
+    const currentCategories = filterCategory.split(',').filter(Boolean);
+    let newCategories;
+    if (value === '') {
+      newCategories = [];
+    } else {
+      newCategories = currentCategories.includes(value)
+        ? currentCategories.filter((cat) => cat !== value)
+        : [...currentCategories, value];
+    }
+    setFilterCategory(newCategories.join(','));
+  };
+
+  // Отображаем выбранные категории
+  const displayCategories = filterCategory
+    ? filterCategory
+        .split(',')
+        .map((cat) => categories.find((c) => c.value === cat)?.label)
+        .filter(Boolean)
+        .join(', ') || 'Все'
+    : 'Все';
 
   return (
     <ControlsWrapper>
@@ -153,7 +181,7 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
             type="button"
             onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
           >
-            {categoryMap[filterCategory] || filterCategory || 'категории'}
+            {displayCategories}
             <Arrow />
           </TriggerButton>
 
@@ -162,10 +190,10 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
               {categories.map((cat) => (
                 <CategoryButton
                   key={cat.value}
-                  selected={filterCategory === cat.value}
+                  selected={cat.value === '' ? !filterCategory : filterCategory.split(',').includes(cat.value)}
                   onClick={() => {
-                    setFilterCategory(cat.value);
-                    setShowCategoryDropdown(false);
+                    handleCategorySelect(cat.value);
+                    if (cat.value === '') setShowCategoryDropdown(false);
                   }}
                 >
                   {cat.icon && <span>{cat.icon}</span>}

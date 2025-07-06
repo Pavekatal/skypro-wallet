@@ -6,27 +6,31 @@ import Header from '../components/Header';
 import ExpenseTable from './ExpenseTable';
 import ExpenseForm from './ExpenseForm';
 import FilterControls from './FilterControls';
-import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../components/api/transactions'; // Без .js
+import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../components/api/transactions';
 import { AuthContext } from '../context/AuthContext';
 import { format, parse } from 'date-fns';
 
 // Маппинг категорий для UI
 const categoryMap = {
-  Food: 'Еда',
-  Transport: 'Транспорт',
-  Entertainment: 'Развлечения',
-  Others: 'Другое',
+  food: 'Еда',
+  transport: 'Транспорт',
+  housing: 'Жилье',
+  joy: 'Развлечения',
+  education: 'Образование',
+  others: 'Другое',
 };
 
 // Обратный маппинг для API
 const reverseCategoryMap = {
-  Еда: 'Food',
-  Транспорт: 'Transport',
-  Развлечения: 'Entertainment',
-  Другое: 'Others',
+  Еда: 'food',
+  Транспорт: 'transport',
+  Жилье: 'housing',
+  Развлечения: 'joy',
+  Образование: 'education',
+  Другое: 'others',
 };
 
-// Стили для главного контейнера
+// Стили
 const Container = styled.div`
   display: flex;
   justify-content: center;
@@ -36,7 +40,6 @@ const Container = styled.div`
   width: 100%;
 `;
 
-// Обертка содержимого
 const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -48,14 +51,12 @@ const ContentWrapper = styled.div`
   }
 `;
 
-// Новый блок для заголовка и таблицы
 const MainContent = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
 `;
 
-// Заголовок страницы "Мои расходы"
 const MainTitle = styled.h2`
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -67,7 +68,6 @@ const MainTitle = styled.h2`
   margin-bottom: 20px;
 `;
 
-// Новый блок для таблицы и формы
 const TableAndFormWrapper = styled.div`
   display: flex;
   gap: 20px;
@@ -76,7 +76,6 @@ const TableAndFormWrapper = styled.div`
   }
 `;
 
-// Секция таблицы
 const TableSection = styled.div`
   flex: 2;
   background: #ffffff;
@@ -103,7 +102,6 @@ const TableSection = styled.div`
   }
 `;
 
-// Заголовок таблицы
 const TableTitle = styled.h3`
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -114,7 +112,6 @@ const TableTitle = styled.h3`
   margin-bottom: 20px;
 `;
 
-// Стили для секции формы
 const FormSection = styled.div`
   flex: 1;
   background: #fff;
@@ -125,7 +122,6 @@ const FormSection = styled.div`
   max-width: 30%;
 `;
 
-// Обертка для заголовка и фильтров
 const TableControlsWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -142,7 +138,7 @@ const MainPage = () => {
   const [sortBy, setSortBy] = useState('');
   const [editData, setEditData] = useState(null);
 
-  // Загрузка транзакций с сервера
+  // Загрузка транзакций
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!user?.token) {
@@ -154,21 +150,25 @@ const MainPage = () => {
           { sortBy, filterBy: filterCategory },
           user.token
         );
-        setExpenses(
-          data.map((item) => ({
-            ...item,
-            id: item._id, // Для ExpenseTable
-            amount: item.sum, // Для ExpenseTable
-            description: item.description, // Явное указание
-            date: parse(item.date, 'M-d-yyyy', new Date()), // Парсим M-D-YYYY
-            displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'), // Для UI
-            displayCategory: categoryMap[item.category] || item.category, // Русская категория
-          }))
-        );
+        const formattedExpenses = data.map((item) => ({
+          ...item,
+          id: item._id,
+          amount: item.sum,
+          description: item.description,
+          date: new Date(item.date), // API возвращает ISO дату
+          displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+          displayCategory: categoryMap[item.category] || item.category,
+        }));
+        setExpenses(formattedExpenses);
       } catch (error) {
-        console.error('Ошибка при загрузке транзакций:', error);
-        toast.error(error || 'Ошибка при загрузке транзакций');
-        setExpenses([]); // Пустой массив при ошибке
+        if (error.message.includes('401')) {
+          toast.error('Пожалуйста, войдите в систему');
+        } else if (error.message.includes('400')) {
+          toast.error(error.message || 'Неверные параметры запроса');
+        } else {
+          toast.error(error.message || 'Ошибка при загрузке транзакций');
+        }
+        setExpenses([]);
       }
     };
     fetchTransactions();
@@ -180,12 +180,12 @@ const MainPage = () => {
     setEditData({
       ...expense,
       _id: expense._id,
-      sum: expense.sum,
+      sum: expense.amount,
       description: expense.description,
-      date: format(new Date(expense.date), 'M-d-yyyy'), // Для API
-      displayDate: format(new Date(expense.date), 'dd.MM.yyyy'), // Для UI
-      displayCategory: categoryMap[expense.category] || expense.category, // Русская категория
-      category: expense.category, // Английская для API
+      date: format(new Date(expense.date), 'yyyy-MM-dd'),
+      displayDate: expense.displayDate,
+      displayCategory: categoryMap[expense.category] || expense.category,
+      category: expense.category,
     });
   };
 
@@ -194,56 +194,82 @@ const MainPage = () => {
     if (!user?.token) return;
     try {
       const updatedList = await deleteTransaction(id, user.token);
-      setExpenses(
-        updatedList.map((item) => ({
-          ...item,
-          id: item._id,
-          amount: item.sum,
-          description: item.description,
-          date: parse(item.date, 'M-d-yyyy', new Date()),
-          displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'),
-          displayCategory: categoryMap[item.category] || item.category,
-        }))
-      );
+      const formattedExpenses = updatedList.map((item) => ({
+        ...item,
+        id: item._id,
+        amount: item.sum,
+        description: item.description,
+        date: new Date(item.date),
+        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+        displayCategory: categoryMap[item.category] || item.category,
+      }));
+      setExpenses(formattedExpenses);
       if (selectedId === id) {
         setSelectedId(null);
         setEditData(null);
       }
     } catch (error) {
-      console.error('Ошибка при удалении транзакции:', error);
-      toast.error(error || 'Ошибка при удалении транзакции');
+      if (error.message.includes('401')) {
+        toast.error('Пожалуйста, войдите в систему');
+      } else if (error.message.includes('400')) {
+        toast.error(error.message || 'Транзакция не найдена');
+      } else {
+        toast.error(error.message || 'Ошибка при удалении транзакции');
+      }
     }
   };
 
   // Обработка отправки формы
   const handleFormSubmit = async (data) => {
-    if (!user?.token) return;
+    if (!user?.token) {
+      toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+      return;
+    }
     try {
+      // Проверка данных перед отправкой
+      if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+        throw new Error('Неверный формат даты');
+      }
+      if (!reverseCategoryMap[data.displayCategory]) {
+        throw new Error('Неверная категория');
+      }
+      // Преобразуем дату в ISO-формат (2025-01-06T00:00:00.000Z)
+      let parsedDate;
+      try {
+        parsedDate = parse(data.date, 'yyyy-MM-dd', new Date());
+      } catch {
+        throw new Error('Неверное значение даты');
+      }
+      const isoDate = format(parsedDate, "yyyy-MM-dd'T00:00:00.000Z'");
       const formattedData = {
         ...data,
-        _id: data._id || undefined,
-        sum: Number(data.sum),
+        _id: data.id || undefined,
+        sum: Number(data.amount),
         description: data.description,
-        category: reverseCategoryMap[data.displayCategory] || data.category, // Русская → Английская
-        date: format(parse(data.displayDate, 'dd.MM.yyyy', new Date()), 'M-d-yyyy'), // UI → API
+        category: reverseCategoryMap[data.displayCategory],
+        date: isoDate, // Отправляем ISO-дату
       };
       const updatedList = await addOrUpdateTransaction(formattedData, user.token);
-      setExpenses(
-        updatedList.map((item) => ({
-          ...item,
-          id: item._id,
-          amount: item.sum,
-          description: item.description,
-          date: parse(item.date, 'M-d-yyyy', new Date()),
-          displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'),
-          displayCategory: categoryMap[item.category] || item.category,
-        }))
-      );
+      const formattedExpenses = updatedList.map((item) => ({
+        ...item,
+        id: item._id,
+        amount: item.sum,
+        description: item.description,
+        date: new Date(item.date),
+        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+        displayCategory: categoryMap[item.category] || item.category,
+      }));
+      setExpenses(formattedExpenses);
       setSelectedId(null);
       setEditData(null);
     } catch (error) {
-      console.error('Ошибка при сохранении транзакции:', error);
-      toast.error(error || 'Ошибка при сохранении транзакции');
+      if (error.message.includes('401')) {
+        toast.error('Пожалуйста, войдите в систему');
+      } else if (error.message.includes('400')) {
+        toast.error(error.message || 'Неверные данные транзакции');
+      } else {
+        toast.error(error.message || 'Ошибка при сохранении транзакции');
+      }
     }
   };
 
@@ -252,22 +278,6 @@ const MainPage = () => {
     setSelectedId(null);
     setEditData(null);
   };
-
-  // Фильтрация и сортировка расходов
-  const filteredAndSortedExpenses = expenses
-    .filter((expense) =>
-      filterCategory
-        ? filterCategory.split(',').includes(expense.category)
-        : true
-    )
-    .sort((a, b) => {
-      if (sortBy === 'date') {
-        return b.date - a.date;
-      } else if (sortBy === 'sum') {
-        return b.sum - a.sum;
-      }
-      return 0;
-    });
 
   return (
     <>
@@ -288,7 +298,7 @@ const MainPage = () => {
                   />
                 </TableControlsWrapper>
                 <ExpenseTable
-                  expenses={filteredAndSortedExpenses}
+                  expenses={expenses}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
