@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { AuthContext } from "./AuthContext";
 import { usersFromLS } from "../utils/usersFromLS";
+import { useNavigate } from "react-router-dom";
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(usersFromLS());
+  const navigate = useNavigate();
 
   const updateUserInfo = (userData) => {
     setUser(userData);
@@ -16,14 +18,13 @@ const AuthProvider = ({ children }) => {
   };
 
   const login = (userLogin) => {
-    console.log("userBefore", user);
     updateUserInfo(userLogin);
-    console.log("userAfter", user);
     return true;
   };
 
   const logout = () => {
     updateUserInfo(null);
+    navigate("/");
     return true;
   };
   return (
