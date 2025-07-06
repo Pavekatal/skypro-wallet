@@ -1,56 +1,68 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { LogoIcon } from '../components/Icons.jsx';
 
 const HeaderWrapper = styled.header`
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  padding: 10px 20px;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 64px;
+  background-color: rgb(255, 255, 255);
+  padding: 0 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
 const Logo = styled.div`
-  font-size: 20px;
-  font-weight: 600;
+  margin-left: 120px;
+  svg {
+    width: 144px;
+    height: 19px;
+  }
 `;
 
 const Nav = styled.nav`
   display: flex;
-  gap: 20px;
-  margin-left: 20px;
+  gap: 50px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const NavButton = styled(Link)`
   text-decoration: ${props => props.active ? 'underline' : 'none'};
-  color: ${props => props.active || props.hover ? '#00C853' : '#000'};
+  color: #333;
   font-family: 'Montserrat', sans-serif;
-  font-weight: ${props => props.active || props.hover ? '600' : '400'};
+  font-weight: ${props => (props.active || props.hover) ? '600' : '400'};
+  font-size: 16px;
   cursor: pointer;
+  transition: color 0.3s ease;
   &:hover {
-    color: #00C853;
+    color: #1FA46C;
     font-weight: 600;
+    text-decoration: underline;
   }
 `;
 
 const LogoutButton = styled.button`
- 
+  margin-left: 20px;
   background: none;
   border: none;
-  color: #000;
+  color: #333;
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
+  font-size: 16px;
   cursor: pointer;
+  transition: color 0.3s ease;
   &:hover {
-    color: #00C853;
+    color: #1FA46C;
   }
 `;
 
 const Header = ({ currentPath }) => {
   return (
     <HeaderWrapper>
-      <Logo>SkypoWallet</Logo>
+      <Logo>
+        <LogoIcon/>
+      </Logo>
       <Nav>
         <NavButton to="/" active={currentPath === '/'}>Мои расходы</NavButton>
         <NavButton to="/spending-analysis" active={currentPath === '/spending-analysis'}>Анализ расходов</NavButton>
