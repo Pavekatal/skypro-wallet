@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-
-// Импортируем иконки
 import {
   FoodIcon,
   TransportIcon,
-  HousingIcon,
   EntertainmentIcon,
-  EducationIcon,
-  OtherIcon
+  OtherIcon,
 } from '../components/Icons.jsx';
+
+// Маппинг категорий
+const categoryMap = {
+  Food: 'Еда',
+  Transport: 'Транспорт',
+  Entertainment: 'Развлечения',
+  Others: 'Другое',
+};
 
 // ==== Стили ====
 const ControlsWrapper = styled.div`
@@ -124,22 +128,20 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
-  // Список категорий
+  // Список категорий с английскими value и русскими label
   const categories = [
-    { name: 'Все', icon: null },
-    { name: 'Еда', icon: <FoodIcon /> },
-    { name: 'Транспорт', icon: <TransportIcon /> },
-    { name: 'Жилье', icon: <HousingIcon /> },
-    { name: 'Развлечения', icon: <EntertainmentIcon /> },
-    { name: 'Образование', icon: <EducationIcon /> },
-    { name: 'Другое', icon: <OtherIcon /> },
+    { value: '', label: 'Все', icon: null },
+    { value: 'Food', label: 'Еда', icon: <FoodIcon /> },
+    { value: 'Transport', label: 'Транспорт', icon: <TransportIcon /> },
+    { value: 'Entertainment', label: 'Развлечения', icon: <EntertainmentIcon /> },
+    { value: 'Others', label: 'Другое', icon: <OtherIcon /> },
   ];
 
   // Список сортировок
   const sortOptions = [
     { value: '', label: 'Нет' },
     { value: 'date', label: 'Дата' },
-    { value: 'amount', label: 'Сумма' },
+    { value: 'sum', label: 'Сумма' },
   ];
 
   return (
@@ -151,7 +153,7 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
             type="button"
             onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
           >
-            {filterCategory || 'категории'}
+            {categoryMap[filterCategory] || filterCategory || 'категории'}
             <Arrow />
           </TriggerButton>
 
@@ -159,15 +161,15 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
             <Dropdown>
               {categories.map((cat) => (
                 <CategoryButton
-                  key={cat.name}
-                  selected={filterCategory === cat.name}
+                  key={cat.value}
+                  selected={filterCategory === cat.value}
                   onClick={() => {
-                    setFilterCategory(cat.name);
+                    setFilterCategory(cat.value);
                     setShowCategoryDropdown(false);
                   }}
                 >
                   {cat.icon && <span>{cat.icon}</span>}
-                  {cat.name}
+                  {cat.label}
                 </CategoryButton>
               ))}
             </Dropdown>

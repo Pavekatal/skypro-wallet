@@ -1,10 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
+import { toast } from 'react-toastify';
 import Header from '../components/Header';
 import ExpenseTable from './ExpenseTable';
 import ExpenseForm from './ExpenseForm';
 import FilterControls from './FilterControls';
+import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../components/api/transactions'; // Без .js
+import { AuthContext } from '../context/AuthContext';
+import { format, parse } from 'date-fns';
+
+// Маппинг категорий для UI
+const categoryMap = {
+  Food: 'Еда',
+  Transport: 'Транспорт',
+  Entertainment: 'Развлечения',
+  Others: 'Другое',
+};
+
+// Обратный маппинг для API
+const reverseCategoryMap = {
+  Еда: 'Food',
+  Транспорт: 'Transport',
+  Развлечения: 'Entertainment',
+  Другое: 'Others',
+};
 
 // Стили для главного контейнера
 const Container = styled.div`
@@ -115,58 +135,119 @@ const TableControlsWrapper = styled.div`
 `;
 
 const MainPage = () => {
-  const [expenses, setExpenses] = useState([
-    { id: 1, description: 'Пятерочка', category: 'Еда', date: '2024-07-03T00:00:00.000Z', amount: 3500 },
-    { id: 2, description: 'Яндекс Такси', category: 'Транспорт', date: '2024-07-03T00:00:00.000Z', amount: 730 },
-    { id: 3, description: 'Аптека Вита', category: 'Другое', date: '2024-07-03T00:00:00.000Z', amount: 1200 },
-    { id: 4, description: 'Бургер Кинг', category: 'Еда', date: '2024-07-03T00:00:00.000Z', amount: 950 },
-    { id: 5, description: 'Деливери', category: 'Еда', date: '2024-07-02T00:00:00.000Z', amount: 1320 },
-    { id: 6, description: 'Кофейня №1', category: 'Еда', date: '2024-07-02T00:00:00.000Z', amount: 400 },
-    { id: 7, description: 'Билеты', category: 'Развлечения', date: '2024-06-29T00:00:00.000Z', amount: 600 },
-    { id: 8, description: 'Перекресток', category: 'Еда', date: '2024-06-29T00:00:00.000Z', amount: 2360 },
-    { id: 9, description: 'Лукойл', category: 'Транспорт', date: '2024-06-29T00:00:00.000Z', amount: 1000 },
-    { id: 10, description: 'Летуаль', category: 'Другое', date: '2024-06-29T00:00:00.000Z', amount: 4300 },
-    { id: 11, description: 'Яндекс Такси', category: 'Транспорт', date: '2024-06-28T00:00:00.000Z', amount: 320 },
-    { id: 12, description: 'Перекресток', category: 'Еда', date: '2024-06-28T00:00:00.000Z', amount: 1360 },
-    { id: 13, description: 'Деливери', category: 'Еда', date: '2024-06-28T00:00:00.000Z', amount: 2320 },
-    { id: 14, description: 'Вкусвилл', category: 'Еда', date: '2024-06-27T00:00:00.000Z', amount: 1220 },
-    { id: 15, description: 'Кофейня №1', category: 'Еда', date: '2024-06-27T00:00:00.000Z', amount: 920 },
-    { id: 16, description: 'Вкусвилл', category: 'Еда', date: '2024-06-26T00:00:00.000Z', amount: 840 },
-    { id: 17, description: 'Кофейня №1', category: 'Еда', date: '2024-06-26T00:00:00.000Z', amount: 920 },
-  ]);
-
+  const { user } = useContext(AuthContext);
+  const [expenses, setExpenses] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [editData, setEditData] = useState(null);
 
+  // Загрузка транзакций с сервера
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!user?.token) {
+        toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+        return;
+      }
+      try {
+        const data = await getTransactions(
+          { sortBy, filterBy: filterCategory },
+          user.token
+        );
+        setExpenses(
+          data.map((item) => ({
+            ...item,
+            id: item._id, // Для ExpenseTable
+            amount: item.sum, // Для ExpenseTable
+            description: item.description, // Явное указание
+            date: parse(item.date, 'M-d-yyyy', new Date()), // Парсим M-D-YYYY
+            displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'), // Для UI
+            displayCategory: categoryMap[item.category] || item.category, // Русская категория
+          }))
+        );
+      } catch (error) {
+        console.error('Ошибка при загрузке транзакций:', error);
+        toast.error(error || 'Ошибка при загрузке транзакций');
+        setExpenses([]); // Пустой массив при ошибке
+      }
+    };
+    fetchTransactions();
+  }, [filterCategory, sortBy, user?.token]);
+
+  // Обработка редактирования
   const handleEdit = (expense) => {
-    setSelectedId(expense.id);
-    setEditData({ ...expense });
+    setSelectedId(expense._id);
+    setEditData({
+      ...expense,
+      _id: expense._id,
+      sum: expense.sum,
+      description: expense.description,
+      date: format(new Date(expense.date), 'M-d-yyyy'), // Для API
+      displayDate: format(new Date(expense.date), 'dd.MM.yyyy'), // Для UI
+      displayCategory: categoryMap[expense.category] || expense.category, // Русская категория
+      category: expense.category, // Английская для API
+    });
   };
 
-  const handleDelete = (id) => {
-    setExpenses(expenses.filter((expense) => expense.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-      setEditData(null);
+  // Обработка удаления
+  const handleDelete = async (id) => {
+    if (!user?.token) return;
+    try {
+      const updatedList = await deleteTransaction(id, user.token);
+      setExpenses(
+        updatedList.map((item) => ({
+          ...item,
+          id: item._id,
+          amount: item.sum,
+          description: item.description,
+          date: parse(item.date, 'M-d-yyyy', new Date()),
+          displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'),
+          displayCategory: categoryMap[item.category] || item.category,
+        }))
+      );
+      if (selectedId === id) {
+        setSelectedId(null);
+        setEditData(null);
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении транзакции:', error);
+      toast.error(error || 'Ошибка при удалении транзакции');
     }
   };
 
-  const handleFormSubmit = (data) => {
-    if (editData) {
+  // Обработка отправки формы
+  const handleFormSubmit = async (data) => {
+    if (!user?.token) return;
+    try {
+      const formattedData = {
+        ...data,
+        _id: data._id || undefined,
+        sum: Number(data.sum),
+        description: data.description,
+        category: reverseCategoryMap[data.displayCategory] || data.category, // Русская → Английская
+        date: format(parse(data.displayDate, 'dd.MM.yyyy', new Date()), 'M-d-yyyy'), // UI → API
+      };
+      const updatedList = await addOrUpdateTransaction(formattedData, user.token);
       setExpenses(
-        expenses.map((expense) =>
-          expense.id === data.id ? { ...data } : expense
-        )
+        updatedList.map((item) => ({
+          ...item,
+          id: item._id,
+          amount: item.sum,
+          description: item.description,
+          date: parse(item.date, 'M-d-yyyy', new Date()),
+          displayDate: format(parse(item.date, 'M-d-yyyy', new Date()), 'dd.MM.yyyy'),
+          displayCategory: categoryMap[item.category] || item.category,
+        }))
       );
       setSelectedId(null);
       setEditData(null);
-    } else {
-      setExpenses([...expenses, { ...data, id: Date.now() }]);
+    } catch (error) {
+      console.error('Ошибка при сохранении транзакции:', error);
+      toast.error(error || 'Ошибка при сохранении транзакции');
     }
   };
 
+  // Обработка отмены редактирования
   const handleFormCancel = () => {
     setSelectedId(null);
     setEditData(null);
@@ -174,14 +255,16 @@ const MainPage = () => {
 
   // Фильтрация и сортировка расходов
   const filteredAndSortedExpenses = expenses
-    .filter((expense) => (
-      filterCategory ? expense.category === filterCategory : true
-    ))
+    .filter((expense) =>
+      filterCategory
+        ? filterCategory.split(',').includes(expense.category)
+        : true
+    )
     .sort((a, b) => {
       if (sortBy === 'date') {
-        return new Date(b.date) - new Date(a.date);
-      } else if (sortBy === 'amount') {
-        return b.amount - a.amount;
+        return b.date - a.date;
+      } else if (sortBy === 'sum') {
+        return b.sum - a.sum;
       }
       return 0;
     });
