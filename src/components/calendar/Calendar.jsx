@@ -12,7 +12,8 @@ import {
 import MonthView from './MonthView/MonthView.jsx';
 import YearView from './YearView/YearView.jsx';
 import { formatDate, formatMonth } from './dateUtils';
-import { WEEKDAYS_SHORT } from './constants/constant.js';
+import { WEEKDAYS_SHORT, MONTH_NAMES } from './constants/constant.js';
+import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 
 /**
  * Календарь для выбора периода (месяц или год)
@@ -29,6 +30,11 @@ const Calendar = ({ onPeriodChange }) => {
   // Для выбора диапазона месяцев
   const [selectedStartMonth, setSelectedStartMonth] = useState(null);
   const [selectedEndMonth, setSelectedEndMonth] = useState(null);
+
+  // Добавляем состояние для выбранного года и месяца
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-11
 
   /**
    * Обработка клика по дню в режиме "месяц"
@@ -148,6 +154,52 @@ const Calendar = ({ onPeriodChange }) => {
         </ViewToggle>
       </CalendarHeader>
 
+      {/* Вкладки месяцев и навигация по годам */}
+      {viewMode === 'month' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+          <MdKeyboardArrowLeft
+            size={28}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setCurrentYear(currentYear - 1)}
+            title="Предыдущий год"
+          />
+          <span style={{ fontWeight: 600, minWidth: 70, textAlign: 'center' }}>{currentYear}</span>
+          <MdKeyboardArrowRight
+            size={28}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setCurrentYear(currentYear + 1)}
+            title="Следующий год"
+          />
+        </div>
+      )}
+
+      {/* Вкладки месяцев */}
+      {viewMode === 'month' && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
+          {MONTH_NAMES.map((name, idx) => (
+            <span
+              key={name}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 12,
+                background: idx === currentMonth ? '#CFF8E2' : '#F1F1F1',
+                color: idx === currentMonth ? '#24A148' : '#000',
+                fontWeight: idx === currentMonth ? 600 : 400,
+                cursor: 'pointer',
+                fontSize: 14,
+                minWidth: 60,
+                textAlign: 'center',
+                border: idx === currentMonth ? '1px solid #24A148' : '1px solid transparent',
+                transition: 'all 0.2s',
+              }}
+              onClick={() => setCurrentMonth(idx)}
+            >
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* В зависимости от режима — показываем дни или месяцы */}
       {viewMode === 'month' ? (
         <>
@@ -158,28 +210,12 @@ const Calendar = ({ onPeriodChange }) => {
             ))}
           </WeekdaysHeader>
 
-          {/* Несколько месяцев для выбора дат */}
+          {/* Один месяц для выбора дат */}
           <ScrollContainer>
             <MonthView
-              month={7}
-              year={2024}
-              title="Июль 2024"
-              startDate={selectedStartDay}
-              endDate={selectedEndDay}
-              onDayClick={handleDayClick}
-            />
-            <MonthView
-              month={8}
-              year={2024}
-              title="Август 2024"
-              startDate={selectedStartDay}
-              endDate={selectedEndDay}
-              onDayClick={handleDayClick}
-            />
-            <MonthView
-              month={9}
-              year={2024}
-              title="Сентябрь 2024"
+              month={currentMonth + 1}
+              year={currentYear}
+              title={`${MONTH_NAMES[currentMonth]} ${currentYear}`}
               startDate={selectedStartDay}
               endDate={selectedEndDay}
               onDayClick={handleDayClick}
@@ -188,7 +224,7 @@ const Calendar = ({ onPeriodChange }) => {
         </>
       ) : (
         <YearView
-          years={[2024, 2025]}
+          years={[currentYear, currentYear + 1]}
           startMonth={selectedStartMonth}
           endMonth={selectedEndMonth}
           onMonthClick={handleMonthClick}
