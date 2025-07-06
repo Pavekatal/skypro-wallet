@@ -1,5 +1,5 @@
 import Header from '../components/Header';
-import Analytics from '../components/analytics/Analytics';
+import Analytics from '../components/analytics/Diagramm';
 import Calendar from '../components/calendar/Calendar';
 import styled from 'styled-components';
 import { useState, useEffect } from 'react';
@@ -39,6 +39,7 @@ const SpendingAnalysisPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('');
   // Список расходов (загружается из localStorage)
   const [expenses, setExpenses] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
   // Загружаем расходы из localStorage (где их сохраняет MainPage)
   useEffect(() => {
@@ -69,9 +70,9 @@ const SpendingAnalysisPage = () => {
           <PageTitle>Анализ расходов</PageTitle>
           <AnalysisContainer>
             {/* Календарь для выбора периода */}
-            <Calendar onPeriodChange={setSelectedPeriod} expenses={expenses} />
+            <Calendar onPeriodChange={setSelectedPeriod} onTransactionsChange={setTransactions} expenses={expenses} />
             {/* Аналитика по выбранному периоду */}
-            <Analytics period={selectedPeriod} expenses={expenses} />
+            <Analytics period={selectedPeriod} transactions={transactions} />
           </AnalysisContainer>
         </SpendingAnalysisWrapper>
       </ContentWrapper>

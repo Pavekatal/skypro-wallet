@@ -30,3 +30,12 @@ export function isMonthInRange(year, month, startMonth, endMonth) {
   const mKey = `${year}-${String(month).padStart(2, '0')}`;
   return mKey >= startMonth && mKey <= endMonth;
 }
+
+// Форматирует дату в 'месяц-день-год' (например, '12-1-2024')
+export function formatMDY(date) {
+  const d = new Date(date);
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const year = d.getFullYear();
+  return `${month}-${day}-${year}`;
+}

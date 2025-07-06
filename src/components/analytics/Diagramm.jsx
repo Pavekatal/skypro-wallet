@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useMemo } from 'react';
 
 // Регистрируем необходимые модули Chart.js
 ChartJS.register(
@@ -23,21 +24,41 @@ ChartJS.register(
  * Аналитика расходов за выбранный период
  * Показывает сумму и столбчатую диаграмму по категориям
  */
-const Analytics = ({ period }) => {
-  // Данные для графика (заглушка)
+const Analytics = ({ period, transactions = [] }) => {
+  // Категории для графика
+  const categories = [
+    'Еда',
+    'Транспорт',
+    'Жилье',
+    'Развлечения',
+    'Образование',
+    'Другое',
+  ];
+
+  // Группировка расходов по категориям
+  const categorySums = useMemo(() => {
+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+      return [0, 0, 0, 0, 0, 0];
+    }
+    const sums = [0, 0, 0, 0, 0, 0];
+    transactions.forEach((t) => {
+      const idx = categories.indexOf(t.category);
+      if (idx !== -1) {
+        sums[idx] += Number(t.sum) || 0;
+      }
+    });
+    return sums;
+  }, [transactions]);
+
+  // Сумма всех расходов
+  const total = useMemo(() => categorySums.reduce((a, b) => a + b, 0), [categorySums]);
+
   const chartData = {
-    labels: [
-      'Еда',
-      'Транспорт',
-      'Жилье',
-      'Развлечения',
-      'Образование',
-      'Другое',
-    ],
+    labels: categories,
     datasets: [
       {
         label: 'Расходы',
-        data: [3590, 1835, 50, 1250, 600, 2306],
+        data: categorySums,
         backgroundColor: [
           'rgb(217, 182, 255)',
           'rgb(255, 181, 61)',
@@ -143,7 +164,7 @@ const Analytics = ({ period }) => {
             marginBottom: '4px',
           }}
         >
-          9 581 ₽
+          {total.toLocaleString()} ₽
         </div>
         <div style={{ color: '#666', fontSize: '14px' }}>
           {period

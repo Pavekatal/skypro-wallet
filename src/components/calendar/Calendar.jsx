@@ -11,15 +11,16 @@ import {
 } from './Calendar.styled';
 import MonthView from './MonthView/MonthView.jsx';
 import YearView from './YearView/YearView.jsx';
-import { formatDate, formatMonth } from './dateUtils';
+import { formatDate, formatMonth, formatMDY } from './dateUtils';
 import { WEEKDAYS_SHORT, MONTH_NAMES } from './constants/constant.js';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
+import { getTransactionsPeriod } from '../../services/transactions.js';
 
 /**
  * Календарь для выбора периода (месяц или год)
  * Позволяет выбрать диапазон дат или месяцев и сообщает выбранный период через onPeriodChange
  */
-const Calendar = ({ onPeriodChange }) => {
+const Calendar = ({ onPeriodChange, onTransactionsChange }) => {
   // Режим отображения: 'month' — по дням, 'year' — по месяцам
   const [viewMode, setViewMode] = useState('month');
 
@@ -110,6 +111,20 @@ const Calendar = ({ onPeriodChange }) => {
     if (viewMode === 'month') {
       if (start && end) {
         onPeriodChange(`${formatDate(start)} - ${formatDate(end)}`);
+        const startVal = formatMDY(start);
+        const endVal = formatMDY(end);
+        getTransactionsPeriod({
+          start: startVal,
+          end: endVal
+        })
+          .then(data => {
+            if (typeof onTransactionsChange === 'function') {
+              onTransactionsChange(data);
+            }
+          })
+            .catch(e => {
+              console.error('Ошибка получения транзакций:', e.message);
+            });
       } else if (start) {
         onPeriodChange(formatDate(start));
       } else {
@@ -117,7 +132,31 @@ const Calendar = ({ onPeriodChange }) => {
       }
     } else {
       if (start && end) {
+        // Преобразуем '2024-01' в 'месяц-день-год', где день = 1 для начала и последний день месяца для конца
+        const parseMonthKey = (key, isEnd = false) => {
+          const [year, month] = key.split('-').map(Number);
+          const day = isEnd
+            ? new Date(year, month, 0).getDate() // последний день месяца
+            : 1;
+          // month - 1, потому что new Date ожидает 0-11
+          return formatMDY(new Date(year, month - 1, day));
+        };
         onPeriodChange(`${formatMonth(start)} - ${formatMonth(end)}`);
+        const startVal = parseMonthKey(start, false);
+        const endVal = parseMonthKey(end, true);
+        console.log('POST period (year mode):', { start: startVal, end: endVal });
+        getTransactionsPeriod({
+          start: startVal,
+          end: endVal
+        })
+          .then(data => {
+            if (typeof onTransactionsChange === 'function') {
+              onTransactionsChange(data);
+            }
+          })
+            .catch(e => {
+              console.error('Ошибка получения транзакций:', e.message);
+            });
       } else if (start) {
         onPeriodChange(formatMonth(start));
       } else {
