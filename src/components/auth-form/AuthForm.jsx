@@ -18,6 +18,8 @@ import {
 import { InputWrapper } from "../inputs/SInput.styled";
 import { AuthContext } from "../../context/AuthContext";
 import { signIn, signUp } from "../../services/auth";
+import { Logo } from "../Header";
+import { LogoIcon } from "../Icons";
 
 const AuthForm = ({ isSignUp }) => {
   const { login } = useContext(AuthContext);
@@ -148,7 +150,7 @@ const AuthForm = ({ isSignUp }) => {
 
   return (
     <>
-      <div
+      <Logo
         style={{
           width: "100%",
           height: "64px",
@@ -157,8 +159,8 @@ const AuthForm = ({ isSignUp }) => {
           alignItems: "center ",
         }}
       >
-        <img src="../../../public/logo.svg" style={{ marginLeft: "120px" }} />
-      </div>
+        <LogoIcon />
+      </Logo>
       <SAuthForm>
         <AuthFormModal>
           <AuthFormModalBlock>

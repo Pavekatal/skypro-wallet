@@ -13,11 +13,15 @@ const HeaderWrapper = styled.header`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
-const Logo = styled.div`
+export const Logo = styled.div`
   margin-left: 120px;
   svg {
     width: 144px;
     height: 19px;
+  }
+
+  @media screen and (min-width: 320px) and (max-width: 767px) {
+    margin-left: 16px;
   }
 `;
 
