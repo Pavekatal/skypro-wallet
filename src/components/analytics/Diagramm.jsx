@@ -25,36 +25,68 @@ ChartJS.register(
  * Показывает сумму и столбчатую диаграмму по категориям
  */
 const Analytics = ({ period, transactions = [] }) => {
-  // Категории для графика
+  // Категории для графика (ключи на английском)
   const categories = [
-    'Еда',
-    'Транспорт',
-    'Жилье',
-    'Развлечения',
-    'Образование',
-    'Другое',
+    'food',
+    'transport',
+    'housing',
+    'entertainment',
+    'education',
+    'others',
   ];
+
+  // Переводы категорий для отображения
+  const categoryLabels = {
+    food: 'Еда',
+    transport: 'Транспорт',
+    housing: 'Жилье',
+    entertainment: 'Развлечения',
+    education: 'Образование',
+    others: 'Другое',
+  };
+
+  // Функция для нормализации категории
+  const normalizeCategory = (cat) => (cat || '').trim().toLowerCase();
+
+  // Маппинг серверных категорий к ключам графика
+  const categoryMap = {
+    food: 'food',
+    transport: 'transport',
+    housing: 'housing',
+    entertainment: 'entertainment',
+    education: 'education',
+    others: 'others',
+    other: 'others',
+  };
 
   // Группировка расходов по категориям
   const categorySums = useMemo(() => {
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
-      return [0, 0, 0, 0, 0, 0];
+      return Array(categories.length).fill(0);
     }
-    const sums = [0, 0, 0, 0, 0, 0];
+    const sums = Array(categories.length).fill(0);
     transactions.forEach((t) => {
-      const idx = categories.indexOf(t.category);
+      const key = categoryMap[normalizeCategory(t.category)];
+      const idx = categories.indexOf(key);
       if (idx !== -1) {
         sums[idx] += Number(t.sum) || 0;
       }
     });
     return sums;
-  }, [transactions]);
+  }, [transactions, categories]);
+
+  // Максимальное значение для ограничения роста столбиков (80% высоты)
+  const maxValue = useMemo(() => Math.max(...categorySums), [categorySums]);
+  const yMax = useMemo(() => maxValue > 0 ? maxValue / 0.87 : 10, [maxValue]);
+
+  // Для отладки: выводим суммы по категориям
+  console.log('categorySums:', categorySums);
 
   // Сумма всех расходов
   const total = useMemo(() => categorySums.reduce((a, b) => a + b, 0), [categorySums]);
 
-  const chartData = {
-    labels: categories,
+  const chartData = useMemo(() => ({
+    labels: categories.map((key) => categoryLabels[key]),
     datasets: [
       {
         label: 'Расходы',
@@ -79,7 +111,7 @@ const Analytics = ({ period, transactions = [] }) => {
         borderRadius: 12,
       },
     ],
-  };
+  }), [categories, categoryLabels, categorySums]);
 
   // Настройки графика
   const chartOptions = {
@@ -97,6 +129,7 @@ const Analytics = ({ period, transactions = [] }) => {
       y: {
         display: false,
         beginAtZero: true,
+        max: yMax,
       },
       x: {
         grid: { display: false },
@@ -110,7 +143,7 @@ const Analytics = ({ period, transactions = [] }) => {
   // Плагин для отображения значений над столбцами
   const showValuesPlugin = {
     id: 'showValues',
-    beforeDatasetsDraw(chart) {
+    afterDatasetsDraw(chart) {
       if (!chart || !chart.ctx || !chart.data || !chart.chartArea) return;
       const ctx = chart.ctx;
       const data = chart.data;
@@ -132,7 +165,10 @@ const Analytics = ({ period, transactions = [] }) => {
       dataset.data.forEach((value, index) => {
         try {
           const xPos = xScale.getPixelForValue(index);
-          const yPos = yScale.getPixelForValue(value) - 5;
+          // Текст всегда над столбиком, но не выходит за пределы графика
+          const yPosRaw = yScale.getPixelForValue(value) - 30;
+          const yZero = yScale.getPixelForValue(0) - 8;
+          const yPos = Math.max(Math.min(yPosRaw, yZero), top + 8);
           if (xPos >= left && xPos <= right && yPos >= top && yPos <= bottom) {
             ctx.fillText(`${value} ₽`, xPos, yPos);
           }
