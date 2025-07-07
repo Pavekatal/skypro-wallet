@@ -79,9 +79,6 @@ const Analytics = ({ period, transactions = [], error }) => {
   const maxValue = useMemo(() => Math.max(...categorySums), [categorySums]);
   const yMax = useMemo(() => maxValue > 0 ? maxValue / 0.87 : 10, [maxValue]);
 
-  // Для отладки: выводим суммы по категориям
-  console.log('categorySums:', categorySums);
-
   // Сумма всех расходов
   const total = useMemo(() => categorySums.reduce((a, b) => a + b, 0), [categorySums]);
 
