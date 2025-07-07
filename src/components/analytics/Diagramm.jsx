@@ -24,7 +24,7 @@ ChartJS.register(
  * Аналитика расходов за выбранный период
  * Показывает сумму и столбчатую диаграмму по категориям
  */
-const Analytics = ({ period, transactions = [] }) => {
+const Analytics = ({ period, transactions = [], error }) => {
   // Категории для графика (ключи на английском)
   const categories = [
     'food',
@@ -191,6 +191,19 @@ const Analytics = ({ period, transactions = [] }) => {
         backgroundColor: 'white',
       }}
     >
+      {error && (
+        <div style={{
+          color: 'red',
+          fontWeight: 'bold',
+          marginBottom: '16px',
+          fontSize: '18px',
+          textAlign: 'center',
+        }}>
+          {error === true
+            ? 'Ошибка загрузки данных. Проверьте соединение с интернетом или попробуйте позже.'
+            : error}
+        </div>
+      )}
       {/* Сумма расходов и подпись периода */}
       <div style={{ marginBottom: '16px' }}>
         <div

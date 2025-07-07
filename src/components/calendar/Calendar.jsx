@@ -20,7 +20,7 @@ import { getTransactionsPeriod } from '../../services/transactions.js';
  * Календарь для выбора периода (месяц или год)
  * Позволяет выбрать диапазон дат или месяцев и сообщает выбранный период через onPeriodChange
  */
-const Calendar = ({ onPeriodChange, onTransactionsChange }) => {
+const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
   // Режим отображения: 'month' — по дням, 'year' — по месяцам
   const [viewMode, setViewMode] = useState('month');
 
@@ -123,6 +123,13 @@ const Calendar = ({ onPeriodChange, onTransactionsChange }) => {
             }
           })
             .catch(e => {
+              if (typeof onError === 'function') {
+                let msg = e && e.message ? e.message : 'Ошибка получения транзакций';
+                if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+                  msg = 'Нет соединения с интернетом или сервер недоступен. Попробуйте позже.';
+                }
+                onError(msg);
+              }
               console.error('Ошибка получения транзакций:', e.message);
             });
       } else if (start) {
@@ -155,6 +162,13 @@ const Calendar = ({ onPeriodChange, onTransactionsChange }) => {
             }
           })
             .catch(e => {
+              if (typeof onError === 'function') {
+                let msg = e && e.message ? e.message : 'Ошибка получения транзакций';
+                if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+                  msg = 'Нет соединения с интернетом или сервер недоступен. Попробуйте позже.';
+                }
+                onError(msg);
+              }
               console.error('Ошибка получения транзакций:', e.message);
             });
       } else if (start) {

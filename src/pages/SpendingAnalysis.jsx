@@ -40,6 +40,8 @@ const SpendingAnalysisPage = () => {
   // Список расходов (загружается из localStorage)
   const [expenses, setExpenses] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  // Состояние для ошибки получения транзакций
+  const [error, setError] = useState(null);
 
   // Загружаем расходы из localStorage (где их сохраняет MainPage)
   useEffect(() => {
@@ -70,9 +72,9 @@ const SpendingAnalysisPage = () => {
           <PageTitle>Анализ расходов</PageTitle>
           <AnalysisContainer>
             {/* Календарь для выбора периода */}
-            <Calendar onPeriodChange={setSelectedPeriod} onTransactionsChange={setTransactions} expenses={expenses} />
+            <Calendar onPeriodChange={setSelectedPeriod} onTransactionsChange={setTransactions} onError={setError} expenses={expenses} />
             {/* Аналитика по выбранному периоду */}
-            <Analytics period={selectedPeriod} transactions={transactions} />
+            <Analytics period={selectedPeriod} transactions={transactions} error={error} />
           </AnalysisContainer>
         </SpendingAnalysisWrapper>
       </ContentWrapper>
