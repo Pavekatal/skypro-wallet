@@ -190,7 +190,12 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
             $isActive={viewMode === 'month'}
             onClick={() => {
               setViewMode('month');
-              updatePeriodLabel(selectedStartDay, selectedEndDay);
+              // Сброс диапазона при смене режима
+              setSelectedStartDay(null);
+              setSelectedEndDay(null);
+              setSelectedStartMonth(null);
+              setSelectedEndMonth(null);
+              updatePeriodLabel(null, null);
             }}
           >
             Месяц
@@ -199,7 +204,12 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
             $isActive={viewMode === 'year'}
             onClick={() => {
               setViewMode('year');
-              updatePeriodLabel(selectedStartMonth, selectedEndMonth);
+              // Сброс диапазона при смене режима
+              setSelectedStartDay(null);
+              setSelectedEndDay(null);
+              setSelectedStartMonth(null);
+              setSelectedEndMonth(null);
+              updatePeriodLabel(null, null);
             }}
           >
             Год
