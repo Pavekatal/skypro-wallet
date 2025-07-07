@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FoodIcon, TransportIcon, HousingIcon, EntertainmentIcon, EducationIcon, OtherIcon } from '../components/Icons.jsx';
-import { Input, Button, ErrorMessage } from '../components/CommonComponents.jsx';
+import { ErrorMessage } from '../components/CommonComponents.jsx';
 import { format, parse } from 'date-fns';
+import { InputWrapper } from '../components/inputs/SInput.styled.js';
+import Input from '../components/inputs/Input.jsx';
+import Button from '../components/buttons/Button.jsx';
+import { ErrorStarContainer } from '../components/errors/SErrorContainer.styled.js';
 
 // Маппинг категорий для UI и API
 const categoryMap = {
@@ -24,7 +28,7 @@ const FormTitle = styled.h3`
   font-family: 'Montserrat', sans-serif;
 `;
 
-// Стили для заголовков полей (включая "Категории")
+// Стили для заголовков полей
 const FieldLabel = styled.div`
   font-weight: 600;
   font-size: 16px;
@@ -70,6 +74,14 @@ const CategoryButton = styled.button`
     `}
 `;
 
+// Контейнер для кнопок с отступом
+const ButtonWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+`;
+
 const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     description: '',
@@ -78,6 +90,13 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     amount: '',
   });
   const [errors, setErrors] = useState({});
+  const [statusInputs, setStatusInputs] = useState({
+    description: 'default',
+    date: 'default',
+    amount: 'default',
+  });
+  const [isActiveButton, setIsActiveButton] = useState(true);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     if (editData) {
@@ -90,19 +109,40 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
           : '',
         amount: editData.amount ? editData.amount.toString() : '',
       });
+      setStatusInputs({
+        description: 'default',
+        date: 'default',
+        amount: 'default',
+      });
+      setIsActiveButton(true);
+      setIsSubmitted(false);
+      setErrors({});
     } else {
       setFormData({ description: '', displayCategory: '', date: '', amount: '' });
+      setStatusInputs({
+        description: 'default',
+        date: 'default',
+        amount: 'default',
+      });
+      setIsActiveButton(true);
+      setIsSubmitted(false);
+      setErrors({});
     }
   }, [editData]);
 
   const validateForm = () => {
     const newErrors = {};
+    const newStatusInputs = { ...statusInputs };
 
     // Валидация description
     if (!formData.description.trim()) {
       newErrors.description = 'Поле description обязательно для заполнения';
+      newStatusInputs.description = 'error';
     } else if (formData.description.trim().length < 4) {
       newErrors.description = 'Поле description должно содержать минимум 4 символа';
+      newStatusInputs.description = 'error';
+    } else {
+      newStatusInputs.description = 'correct';
     }
 
     // Валидация category
@@ -116,23 +156,32 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     // Валидация date
     if (!formData.date) {
       newErrors.date = 'Поле date обязательно для заполнения';
+      newStatusInputs.date = 'error';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
       newErrors.date = 'Поле date должно быть в формате yyyy-MM-dd';
+      newStatusInputs.date = 'error';
     } else {
       try {
         parse(formData.date, 'yyyy-MM-dd', new Date());
+        newStatusInputs.date = 'correct';
       } catch {
         newErrors.date = 'Поле date должно быть валидной датой';
+        newStatusInputs.date = 'error';
       }
     }
 
     // Валидация amount
     if (!formData.amount) {
       newErrors.amount = 'Поле sum обязательно для заполнения';
+      newStatusInputs.amount = 'error';
     } else if (isNaN(formData.amount) || Number(formData.amount) <= 0) {
       newErrors.amount = 'Поле sum должно быть положительным числом';
+      newStatusInputs.amount = 'error';
+    } else {
+      newStatusInputs.amount = 'correct';
     }
 
+    setStatusInputs(newStatusInputs);
     return newErrors;
   };
 
@@ -140,17 +189,54 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setErrors({ ...errors, [name]: '' });
+    setIsActiveButton(true);
+    setStatusInputs({ ...statusInputs, [name]: 'default' });
+
+    // Проверка валидности для description и amount
+    if (name === 'description') {
+      if (value.trim().length >= 4) {
+        setStatusInputs({ ...statusInputs, [name]: 'correct' });
+      } else {
+        setStatusInputs({ ...statusInputs, [name]: 'error' });
+      }
+    }
+    if (name === 'amount') {
+      if (value && !isNaN(value) && Number(value) > 0) {
+        setStatusInputs({ ...statusInputs, [name]: 'correct' });
+      } else {
+        setStatusInputs({ ...statusInputs, [name]: 'error' });
+      }
+    }
+    if (name === 'date') {
+      if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        try {
+          parse(value, 'yyyy-MM-dd', new Date());
+          setStatusInputs({ ...statusInputs, [name]: 'correct' });
+        } catch {
+          setStatusInputs({ ...statusInputs, [name]: 'error' });
+        }
+      } else {
+        setStatusInputs({ ...statusInputs, [name]: 'error' });
+      }
+    }
   };
 
   const handleCategorySelect = (category) => {
     setFormData({ ...formData, displayCategory: category });
     setErrors({ ...errors, displayCategory: '' });
+    setIsActiveButton(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitted(true);
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
+      setStatusInputs({
+        description: 'default',
+        date: 'default',
+        amount: 'default',
+      });
       console.log('Данные формы перед отправкой:', formData);
       const result = await onSubmit({
         ...formData,
@@ -159,12 +245,30 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
         category: categoryMap[formData.displayCategory],
         displayDate: formData.date,
       });
-      // Очищаем форму только при успешном добавлении новой транзакции
+      // Очищаем форму и сбрасываем состояния при успешном добавлении
       if (result.success && !editData) {
-        setFormData({ description: '', displayCategory: '', date: '', amount: '' });
+        setFormData({
+          description: '',
+          displayCategory: '',
+          date: '',
+          amount: '',
+        });
+        setStatusInputs({
+          description: 'default',
+          date: 'default',
+          amount: 'default',
+        });
         setErrors({});
+        setIsSubmitted(false);
+        setIsActiveButton(true);
       }
     } else {
+      setStatusInputs({
+        description: newErrors.description ? 'error' : 'correct',
+        date: newErrors.date ? 'error' : 'correct',
+        amount: newErrors.amount ? 'error' : 'correct',
+      });
+      setIsActiveButton(false);
       setErrors(newErrors);
     }
   };
@@ -202,13 +306,18 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
       <FormTitle>{editData ? 'Редактирование' : 'Новый расход'}</FormTitle>
       <form onSubmit={handleSubmit}>
         <FieldLabel>Описание</FieldLabel>
-        <Input
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Введите описание"
-          $valid={isValidInput(formData.description, 'description')}
-        />
+        <InputWrapper>
+          <Input
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Введите описание"
+            statusInput={statusInputs.description}
+          />
+          {errors.description && isSubmitted && (
+            <ErrorStarContainer>*</ErrorStarContainer>
+          )}
+        </InputWrapper>
         {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
         <FieldLabel>Категории</FieldLabel>
         {categories.map((cat) => (
@@ -221,32 +330,47 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
             {cat.name}
           </CategoryButton>
         ))}
+        {errors.displayCategory && isSubmitted && (
+          <ErrorStarContainer>*</ErrorStarContainer>
+        )}
         {errors.displayCategory && <ErrorMessage>{errors.displayCategory}</ErrorMessage>}
         <FieldLabel>Дата</FieldLabel>
-        <Input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleChange}
-          placeholder="Введите дату"
-          $valid={isValidInput(formData.date, 'date')}
-        />
+        <InputWrapper>
+          <Input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            placeholder="Введите дату"
+            statusInput={statusInputs.date}
+          />
+          {errors.date && isSubmitted && <ErrorStarContainer>*</ErrorStarContainer>}
+        </InputWrapper>
         {errors.date && <ErrorMessage>{errors.date}</ErrorMessage>}
         <FieldLabel>Сумма</FieldLabel>
-        <Input
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          placeholder="Введите сумму"
-          $valid={isValidInput(formData.amount, 'amount')}
-        />
+        <InputWrapper>
+          <Input
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            placeholder="Введите сумму"
+            statusInput={statusInputs.amount}
+          />
+          {errors.amount && isSubmitted && <ErrorStarContainer>*</ErrorStarContainer>}
+        </InputWrapper>
         {errors.amount && <ErrorMessage>{errors.amount}</ErrorMessage>}
-        <Button type="submit" $variant="primary" $fullWidth>
-          {editData ? 'Сохранить редактирование' : 'Добавить новый расход'}
-        </Button>
-        {editData && (
-          <Button $variant="secondary" $fullWidth onClick={onCancel}>
-            Отмена
+        {editData ? (
+          <ButtonWrapper>
+            <Button type="submit" isActive={isActiveButton}>
+              Сохранить редактирование
+            </Button>
+            <Button isActive={true} onClick={onCancel}>
+              Отмена
+            </Button>
+          </ButtonWrapper>
+        ) : (
+          <Button type="submit" isActive={isActiveButton}>
+            Добавить новый расход
           </Button>
         )}
       </form>
