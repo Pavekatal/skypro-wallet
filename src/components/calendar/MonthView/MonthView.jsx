@@ -1,46 +1,50 @@
 import React from 'react';
 import styled from 'styled-components';
 import { DayCell, EmptyDayCell } from '../DayCell.styled.js';
-import { WEEKDAYS_SHORT } from '../constants/constant.js';
 
-const MonthView = ({ 
-  month, 
-  year, 
-  title, 
-  startDate, 
-  endDate, 
-  onDayClick 
-}) => {
+/**
+ * Месячный календарь: сетка дней с возможностью выбрать диапазон
+ * month — номер месяца (1-12), year — год, title — заголовок (например, 'Июль 2024')
+ * startDate/endDate — выбранный диапазон дат (строки 'YYYY-MM-DD')
+ * onDayClick — обработчик клика по дню
+ */
+function MonthView({ month, year, title, startDate, endDate, onDayClick }) {
+  // Сколько дней в этом месяце
   const daysInMonth = new Date(year, month, 0).getDate();
+  // День недели первого числа (1 — понедельник, 7 — воскресенье)
   const firstDayOfWeek = new Date(year, month - 1, 1).getDay() || 7;
 
-  const isDaySelected = (date) => date === startDate || date === endDate;
-  
-  const isDayInRange = (date) => {
+  // Проверяет, выбран ли этот день
+  function isSelected(dateStr) {
+    return dateStr === startDate || dateStr === endDate;
+  }
+
+  // Проверяет, входит ли день в выбранный диапазон
+  function isInRange(dateStr) {
     if (startDate && endDate) {
-      const current = new Date(date);
-      return current >= new Date(startDate) && current <= new Date(endDate);
+      const d = new Date(dateStr);
+      return d >= new Date(startDate) && d <= new Date(endDate);
     }
     return false;
-  };
+  }
 
   return (
     <MonthContainer>
       <MonthHeader>{title}</MonthHeader>
       <DaysGrid>
+        {/* Пустые ячейки для выравнивания начала месяца */}
         {Array.from({ length: firstDayOfWeek - 1 }).map((_, i) => (
           <EmptyDayCell key={`empty-${i}`} />
         ))}
-        
+        {/* Дни месяца */}
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
           const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          
           return (
             <DayCell
               key={dateStr}
-              $isSelected={isDaySelected(dateStr)}
-              $isInRange={isDayInRange(dateStr)}
+              $isSelected={isSelected(dateStr)}
+              $isInRange={isInRange(dateStr)}
               onClick={() => onDayClick(dateStr)}
             >
               {day}
@@ -50,8 +54,9 @@ const MonthView = ({
       </DaysGrid>
     </MonthContainer>
   );
-};
+}
 
+// --- Стили ---
 const MonthContainer = styled.div`
   padding: 20px;
 `;
