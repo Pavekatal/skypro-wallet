@@ -71,32 +71,28 @@ const ExpenseTable = ({ expenses, onEdit, onDelete }) => {
         </tr>
       </thead>
       <tbody>
-        {expenses.map(expense => (
-          <TableRow key={expense.id} selected={expense.id === expense.id}>
-            <TableCell selected={expense.id === expense.id}>{expense.description}</TableCell>
-            <TableCell selected={expense.id === expense.id}>{expense.category}</TableCell>
-            <TableCell selected={expense.id === expense.id}>
-              {new Date(expense.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            </TableCell>
-            <TableCell selected={expense.id === expense.id}>{`${expense.amount.toLocaleString('ru-RU')} Р`}</TableCell>
-            <TableCell>
-              <ActionButton
-                aria-label="edit"
-                selected={expense.id === expense.id}
-                onClick={() => onEdit(expense)}
-              >
-                <EditIcon />
-              </ActionButton>
-              <ActionButton
-                aria-label="delete"
-                selected={expense.id === expense.id}
-                onClick={() => onDelete(expense.id)}
-              >
-                <DeleteIcon />
-              </ActionButton>
-            </TableCell>
-          </TableRow>
-        ))}
+        {expenses.length === 0 ? (
+          <tr>
+            <TableCell colSpan="5">Нет данных</TableCell>
+          </tr>
+        ) : (
+          expenses.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell>{expense.description}</TableCell>
+              <TableCell>{expense.displayCategory}</TableCell>
+              <TableCell>{expense.displayDate}</TableCell>
+              <TableCell>{`${expense.amount.toLocaleString('ru-RU')} Р`}</TableCell>
+              <TableCell>
+                <ActionButton aria-label="edit" onClick={() => onEdit(expense)}>
+                  <EditIcon />
+                </ActionButton>
+                <ActionButton aria-label="delete" onClick={() => onDelete(expense.id)}>
+                  <DeleteIcon />
+                </ActionButton>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </tbody>
     </Table>
   );

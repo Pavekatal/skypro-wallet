@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
+import { toast } from 'react-toastify';
 import Header from '../components/Header';
 import ExpenseTable from './ExpenseTable';
 import ExpenseForm from './ExpenseForm';
 import FilterControls from './FilterControls';
+import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../services/transactions';
+import { AuthContext } from '../context/AuthContext';
+import { format, parse } from 'date-fns';
+import { categories } from '../constants/categories.js';
 
-// Стили для главного контейнера
+// Стили
 const Container = styled.div`
   display: flex;
   justify-content: center;
@@ -16,7 +21,6 @@ const Container = styled.div`
   width: 100%;
 `;
 
-// Обертка содержимого
 const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -28,14 +32,12 @@ const ContentWrapper = styled.div`
   }
 `;
 
-// Новый блок для заголовка и таблицы
 const MainContent = styled.div`
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
 `;
 
-// Заголовок страницы "Мои расходы"
 const MainTitle = styled.h2`
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -47,7 +49,6 @@ const MainTitle = styled.h2`
   margin-bottom: 20px;
 `;
 
-// Новый блок для таблицы и формы
 const TableAndFormWrapper = styled.div`
   display: flex;
   gap: 20px;
@@ -56,7 +57,6 @@ const TableAndFormWrapper = styled.div`
   }
 `;
 
-// Секция таблицы
 const TableSection = styled.div`
   flex: 2;
   background: #ffffff;
@@ -83,7 +83,6 @@ const TableSection = styled.div`
   }
 `;
 
-// Заголовок таблицы
 const TableTitle = styled.h3`
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
@@ -94,7 +93,6 @@ const TableTitle = styled.h3`
   margin-bottom: 20px;
 `;
 
-// Стили для секции формы
 const FormSection = styled.div`
   flex: 1;
   background: #fff;
@@ -105,7 +103,6 @@ const FormSection = styled.div`
   max-width: 30%;
 `;
 
-// Обертка для заголовка и фильтров
 const TableControlsWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -115,76 +112,154 @@ const TableControlsWrapper = styled.div`
 `;
 
 const MainPage = () => {
-  const [expenses, setExpenses] = useState([
-    { id: 1, description: 'Пятерочка', category: 'Еда', date: '2024-07-03T00:00:00.000Z', amount: 3500 },
-    { id: 2, description: 'Яндекс Такси', category: 'Транспорт', date: '2024-07-03T00:00:00.000Z', amount: 730 },
-    { id: 3, description: 'Аптека Вита', category: 'Другое', date: '2024-07-03T00:00:00.000Z', amount: 1200 },
-    { id: 4, description: 'Бургер Кинг', category: 'Еда', date: '2024-07-03T00:00:00.000Z', amount: 950 },
-    { id: 5, description: 'Деливери', category: 'Еда', date: '2024-07-02T00:00:00.000Z', amount: 1320 },
-    { id: 6, description: 'Кофейня №1', category: 'Еда', date: '2024-07-02T00:00:00.000Z', amount: 400 },
-    { id: 7, description: 'Билеты', category: 'Развлечения', date: '2024-06-29T00:00:00.000Z', amount: 600 },
-    { id: 8, description: 'Перекресток', category: 'Еда', date: '2024-06-29T00:00:00.000Z', amount: 2360 },
-    { id: 9, description: 'Лукойл', category: 'Транспорт', date: '2024-06-29T00:00:00.000Z', amount: 1000 },
-    { id: 10, description: 'Летуаль', category: 'Другое', date: '2024-06-29T00:00:00.000Z', amount: 4300 },
-    { id: 11, description: 'Яндекс Такси', category: 'Транспорт', date: '2024-06-28T00:00:00.000Z', amount: 320 },
-    { id: 12, description: 'Перекресток', category: 'Еда', date: '2024-06-28T00:00:00.000Z', amount: 1360 },
-    { id: 13, description: 'Деливери', category: 'Еда', date: '2024-06-28T00:00:00.000Z', amount: 2320 },
-    { id: 14, description: 'Вкусвилл', category: 'Еда', date: '2024-06-27T00:00:00.000Z', amount: 1220 },
-    { id: 15, description: 'Кофейня №1', category: 'Еда', date: '2024-06-27T00:00:00.000Z', amount: 920 },
-    { id: 16, description: 'Вкусвилл', category: 'Еда', date: '2024-06-26T00:00:00.000Z', amount: 840 },
-    { id: 17, description: 'Кофейня №1', category: 'Еда', date: '2024-06-26T00:00:00.000Z', amount: 920 },
-  ]);
-
+  const { user } = useContext(AuthContext);
+  const [expenses, setExpenses] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [editData, setEditData] = useState(null);
 
+  // Загрузка транзакций
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!user?.token) {
+        toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+        return;
+      }
+      try {
+        const data = await getTransactions(
+          { sortBy, filterBy: filterCategory },
+          user.token
+        );
+        const formattedExpenses = data.map((item) => ({
+          ...item,
+          id: item._id,
+          amount: item.sum,
+          description: item.description,
+          date: new Date(item.date),
+          displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+          displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+        }));
+        setExpenses(formattedExpenses);
+      } catch (error) {
+        if (error.message.includes('401')) {
+          toast.error('Пожалуйста, войдите в систему');
+        } else if (error.message.includes('400')) {
+          toast.error(error.message || 'Неверные параметры запроса');
+        } else {
+          toast.error(error.message || 'Ошибка при загрузке транзакций');
+        }
+        setExpenses([]);
+      }
+    };
+    fetchTransactions();
+  }, [filterCategory, sortBy, user?.token]);
+
+  // Обработка редактирования
   const handleEdit = (expense) => {
-    setSelectedId(expense.id);
-    setEditData({ ...expense });
+    setSelectedId(expense._id);
+    setEditData({
+      ...expense,
+      _id: expense._id,
+      sum: expense.amount,
+      description: expense.description,
+      date: format(new Date(expense.date), 'yyyy-MM-dd'),
+      displayDate: expense.displayDate,
+      displayCategory: categories.find(cat => cat.value === expense.category)?.label || expense.category,
+      category: expense.category,
+    });
   };
 
-  const handleDelete = (id) => {
-    setExpenses(expenses.filter((expense) => expense.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-      setEditData(null);
+  // Обработка удаления
+  const handleDelete = async (id) => {
+    if (!user?.token) return;
+    try {
+      const updatedList = await deleteTransaction(id, user.token);
+      const formattedExpenses = updatedList.map((item) => ({
+        ...item,
+        id: item._id,
+        amount: item.sum,
+        description: item.description,
+        date: new Date(item.date),
+        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+      }));
+      setExpenses(formattedExpenses);
+      if (selectedId === id) {
+        setSelectedId(null);
+        setEditData(null);
+      }
+    } catch (error) {
+      if (error.message.includes('401')) {
+        toast.error('Пожалуйста, войдите в систему');
+      } else if (error.message.includes('400')) {
+        toast.error(error.message || 'Транзакция не найдена');
+      } else {
+        toast.error(error.message || 'Ошибка при удалении транзакции');
+      }
     }
   };
 
-  const handleFormSubmit = (data) => {
-    if (editData) {
-      setExpenses(
-        expenses.map((expense) =>
-          expense.id === data.id ? { ...data } : expense
-        )
-      );
+  // Обработка отправки формы
+  const handleFormSubmit = async (data) => {
+    if (!user?.token) {
+      toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+      return { success: false };
+    }
+    try {
+      if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+        throw new Error('Неверный формат даты');
+      }
+      const categoryValue = categories.find(cat => cat.label === data.displayCategory)?.value;
+      if (!categoryValue) {
+        throw new Error('Неверная категория');
+      }
+      let parsedDate;
+      try {
+        parsedDate = parse(data.date, 'yyyy-MM-dd', new Date());
+      } catch {
+        throw new Error('Неверное значение даты');
+      }
+      const isoDate = format(parsedDate, "yyyy-MM-dd'T00:00:00.000Z'");
+      const formattedData = {
+        ...data,
+        _id: data.id || undefined,
+        sum: Number(data.amount),
+        description: data.description,
+        category: categoryValue,
+        date: isoDate,
+      };
+      const updatedList = await addOrUpdateTransaction(formattedData, user.token);
+      const formattedExpenses = updatedList.map((item) => ({
+        ...item,
+        id: item._id,
+        amount: item.sum,
+        description: item.description,
+        date: new Date(item.date),
+        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
+        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+      }));
+      setExpenses(formattedExpenses);
       setSelectedId(null);
       setEditData(null);
-    } else {
-      setExpenses([...expenses, { ...data, id: Date.now() }]);
+      return { success: true };
+    } catch (error) {
+      if (error.message.includes('401')) {
+        toast.error('Пожалуйста, войдите в систему');
+      } else if (error.message.includes('400')) {
+        toast.error(error.message || 'Неверные данные транзакции');
+      } else {
+        toast.error(error.message || 'Ошибка при сохранении транзакции');
+      }
+      return { success: false };
     }
   };
 
+  // Обработка отмены редактирования
   const handleFormCancel = () => {
     setSelectedId(null);
     setEditData(null);
   };
-
-  // Фильтрация и сортировка расходов
-  const filteredAndSortedExpenses = expenses
-    .filter((expense) => (
-      filterCategory ? expense.category === filterCategory : true
-    ))
-    .sort((a, b) => {
-      if (sortBy === 'date') {
-        return new Date(b.date) - new Date(a.date);
-      } else if (sortBy === 'amount') {
-        return b.amount - a.amount;
-      }
-      return 0;
-    });
 
   return (
     <>
@@ -205,7 +280,7 @@ const MainPage = () => {
                   />
                 </TableControlsWrapper>
                 <ExpenseTable
-                  expenses={filteredAndSortedExpenses}
+                  expenses={expenses}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
