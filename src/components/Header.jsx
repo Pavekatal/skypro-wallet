@@ -33,10 +33,10 @@ const Nav = styled.nav`
 `;
 
 const NavButton = styled(Link)`
-  text-decoration: ${(props) => (props.active ? "underline" : "none")};
+  text-decoration: ${(props) => (props.$active ? "underline" : "none")};
   color: #333;
   font-family: "Montserrat", sans-serif;
-  font-weight: ${(props) => (props.active || props.hover ? "600" : "400")};
+  font-weight: ${(props) => (props.$active || props.hover ? "600" : "400")};
   font-size: 16px;
   cursor: pointer;
   transition: color 0.3s ease;
@@ -71,12 +71,12 @@ const Header = ({ currentPath }) => {
         <LogoIcon />
       </Logo>
       <Nav>
-        <NavButton to="/" active={currentPath === "/"}>
+        <NavButton to="/" $active={currentPath === "/"}>
           Мои расходы
         </NavButton>
         <NavButton
           to="/spending-analysis"
-          active={currentPath === "/spending-analysis"}
+          $active={currentPath === "/spending-analysis"}
         >
           Анализ расходов
         </NavButton>
