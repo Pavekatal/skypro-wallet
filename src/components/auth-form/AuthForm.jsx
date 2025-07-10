@@ -192,7 +192,6 @@ const AuthForm = ({ isSignUp }) => {
                   placeholder="Эл. почта"
                   value={values.login}
                   statusInput={statusInputs.login}
-                  // showStar={errors.login && isSubmitted}
                   onChange={(e) => handleChange("login", e.target.value)}
                 />
                 {errors.login && isSubmitted && (
@@ -207,7 +206,6 @@ const AuthForm = ({ isSignUp }) => {
                   placeholder="Пароль"
                   value={values.password}
                   statusInput={statusInputs.password}
-                  // showStar={errors.password && isSubmitted}
                   onChange={(e) => handleChange("password", e.target.value)}
                 />
                 {errors.password && isSubmitted && (

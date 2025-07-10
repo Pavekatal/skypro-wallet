@@ -81,7 +81,6 @@ const Header = ({ currentPath }) => {
           Анализ расходов
         </NavButton>
       </Nav>
-      {/* () => (window.location.href = "/sign-in") */}
       <LogoutButton onClick={logout}>Выйти</LogoutButton>
     </HeaderWrapper>
   );
