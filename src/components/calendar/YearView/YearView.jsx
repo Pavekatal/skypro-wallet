@@ -3,28 +3,29 @@ import styled from 'styled-components';
 import { MONTH_NAMES } from '../constants/constant.js';
 import { isMonthInRange } from '../dateUtils.js';
 
-const YearView = ({ 
-  years, 
-  startMonth, 
-  endMonth, 
-  onMonthClick 
-}) => {
-  const isMonthSelected = (year, month) => {
-    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-    return monthKey === startMonth || monthKey === endMonth;
-  };
+/**
+ * Годовой календарь: сетка месяцев для выбора диапазона
+ * years — массив годов (например, [2024, 2025])
+ * startMonth/endMonth — выбранный диапазон месяцев ('YYYY-MM')
+ * onMonthClick — обработчик клика по месяцу
+ */
+function YearView({ years, startMonth, endMonth, onMonthClick }) {
+  // Проверяет, выбран ли месяц
+  function isSelected(year, month) {
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    return key === startMonth || key === endMonth;
+  }
 
   return (
     <ScrollContainer>
       {years.map(year => (
-        <YearContainer key={year}>
+        <YearBlock key={year}>
           <YearHeader>{year}</YearHeader>
           <MonthsGrid>
-            {MONTH_NAMES.map((month, index) => {
-              const monthNum = index + 1;
-              const selected = isMonthSelected(year, monthNum);
+            {MONTH_NAMES.map((name, idx) => {
+              const monthNum = idx + 1;
+              const selected = isSelected(year, monthNum);
               const inRange = isMonthInRange(year, monthNum, startMonth, endMonth);
-              
               return (
                 <MonthCell
                   key={`${year}-${monthNum}`}
@@ -32,24 +33,25 @@ const YearView = ({
                   $isInRange={inRange}
                   onClick={() => onMonthClick(year, monthNum)}
                 >
-                  {month}
+                  {name}
                 </MonthCell>
               );
             })}
           </MonthsGrid>
-        </YearContainer>
+        </YearBlock>
       ))}
     </ScrollContainer>
   );
-};
+}
 
+// --- Стили ---
 const ScrollContainer = styled.div`
   flex-grow: 1;
   overflow-y: auto;
   padding-bottom: 20px;
 `;
 
-const YearContainer = styled.div`
+const YearBlock = styled.div`
   padding: 20px;
 `;
 
@@ -65,7 +67,7 @@ const MonthsGrid = styled.div`
 `;
 
 const MonthCell = styled.div`
-  background: ${({ $isSelected, $isInRange }) => 
+  background: ${({ $isSelected, $isInRange }) =>
     $isSelected ? '#CFF8E2' :
     $isInRange ? '#EAF9F1' : '#F1F1F1'};
   color: ${({ $isSelected }) => ($isSelected ? '#24A148' : '#000')};
