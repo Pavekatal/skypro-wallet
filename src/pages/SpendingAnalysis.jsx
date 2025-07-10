@@ -1,9 +1,10 @@
 import Header from '../components/Header';
-import Analytics from '../components/analytics/Analytics';
+import Analytics from '../components/analytics/Diagramm';
 import Calendar from '../components/calendar/Calendar';
 import styled from 'styled-components';
 import { useState, useEffect } from 'react';
 
+// --- Стили для страницы ---
 const ContentWrapper = styled.div`
   display: flex;
   justify-content: center;
@@ -26,45 +27,54 @@ const AnalysisContainer = styled.div`
   margin-top: 32px;
   display: flex;
   justify-content: center;
-  gap: 20px; // Добавляем отступ между календарем и аналитикой
+  gap: 20px; // Отступ между календарем и аналитикой
 `;
 
-
+/**
+ * Страница анализа расходов
+ * Позволяет выбрать период и посмотреть аналитику по расходам
+ */
 const SpendingAnalysisPage = () => {
-  const [period, setPeriod] = useState('');
+  // Выбранный пользователем период (строка)
+  const [selectedPeriod, setSelectedPeriod] = useState('');
+  // Список расходов (загружается из localStorage)
   const [expenses, setExpenses] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  // Состояние для ошибки получения транзакций
+  const [error, setError] = useState(null);
 
   // Загружаем расходы из localStorage (где их сохраняет MainPage)
   useEffect(() => {
-    const loadExpenses = () => {
+    function loadExpensesFromStorage() {
       const savedExpenses = localStorage.getItem('expenses');
       if (savedExpenses) {
         try {
           setExpenses(JSON.parse(savedExpenses));
         } catch (e) {
-          console.error('Failed to parse expenses', e);
+          console.error('Ошибка при разборе расходов', e);
         }
       }
-    };
-
-    loadExpenses();
-    // Подписываемся на изменения в localStorage
-    window.addEventListener('storage', loadExpenses);
-    return () => window.removeEventListener('storage', loadExpenses);
+    }
+    loadExpensesFromStorage();
+    // Подписываемся на изменения в localStorage (например, если расходы изменились в другой вкладке)
+    window.addEventListener('storage', loadExpensesFromStorage);
+    return () => window.removeEventListener('storage', loadExpensesFromStorage);
   }, []);
 
+  // --- UI ---
   return (
-     <>
+    <>
+      {/* Шапка сайта */}
       <Header currentPath="/spending-analysis" />
       <ContentWrapper>
         <SpendingAnalysisWrapper>
+          {/* Заголовок страницы */}
           <PageTitle>Анализ расходов</PageTitle>
           <AnalysisContainer>
-            <Calendar 
-              onPeriodChange={setPeriod} 
-              expenses={expenses}
-            />
-            <Analytics period={period} expenses={expenses} />
+            {/* Календарь для выбора периода */}
+            <Calendar onPeriodChange={setSelectedPeriod} onTransactionsChange={setTransactions} onError={setError} expenses={expenses} />
+            {/* Аналитика по выбранному периоду */}
+            <Analytics period={selectedPeriod} transactions={transactions} error={error} />
           </AnalysisContainer>
         </SpendingAnalysisWrapper>
       </ContentWrapper>
