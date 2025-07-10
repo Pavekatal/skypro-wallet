@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import Header, { Logo } from "../components/Header";
+import { Logo } from "../components/Header";
 import { LogoIcon } from "../components/Icons";
 
 const Container = styled.div`
