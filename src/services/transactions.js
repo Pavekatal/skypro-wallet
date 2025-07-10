@@ -1,6 +1,6 @@
-import { format, parse } from 'date-fns';
+import { categories } from '../constants/categories.js';
 
-const validCategories = ['food', 'transport', 'housing', 'joy', 'education', 'others'];
+const validCategories = categories.map(cat => cat.value).filter(value => value !== '');
 
 export const addOrUpdateTransaction = async (transactionData, token) => {
   try {
@@ -14,9 +14,8 @@ export const addOrUpdateTransaction = async (transactionData, token) => {
     if (transactionData.sum <= 0 || isNaN(transactionData.sum)) {
       throw new Error('Сумма должна быть положительным числом');
     }
-    // Проверка формата даты (ожидаем ISO, например, 2025-01-06T00:00:00.000Z)
     try {
-      new Date(transactionData.date); // Проверяем, что дата валидна
+      new Date(transactionData.date);
     } catch {
       throw new Error('Неверный формат даты');
     }
@@ -35,7 +34,7 @@ export const addOrUpdateTransaction = async (transactionData, token) => {
         description: transactionData.description,
         sum: Number(transactionData.sum),
         category: transactionData.category,
-        date: transactionData.date, // Отправляем ISO дату
+        date: transactionData.date,
       }),
     });
 
@@ -51,7 +50,6 @@ export const addOrUpdateTransaction = async (transactionData, token) => {
     }
 
     const responseData = await response.json();
-    // API возвращает { transactions: [...] }, извлекаем массив
     return responseData.transactions || [];
   } catch (error) {
     throw error.message || 'Ошибка сервера';
@@ -108,7 +106,6 @@ export const deleteTransaction = async (id, token) => {
     }
 
     const responseData = await response.json();
-    // API возвращает { transactions: [...] }, извлекаем массив
     return responseData.transactions || [];
   } catch (error) {
     throw error.message || 'Ошибка сервера';

@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FoodIcon, TransportIcon, HousingIcon, EntertainmentIcon, EducationIcon, OtherIcon } from '../components/Icons.jsx';
 import { ErrorMessage } from '../components/CommonComponents.jsx';
 import { format, parse } from 'date-fns';
 import { InputWrapper } from '../components/inputs/SInput.styled.js';
 import Input from '../components/inputs/Input.jsx';
 import Button from '../components/buttons/Button.jsx';
 import { ErrorStarContainer } from '../components/errors/SErrorContainer.styled.js';
-
-// Маппинг категорий для UI и API
-const categoryMap = {
-  Еда: 'food',
-  Транспорт: 'transport',
-  Жилье: 'housing',
-  Развлечения: 'joy',
-  Образование: 'education',
-  Другое: 'others',
-};
+import { categories } from '../constants/categories.js';
 
 // Стили для заголовка формы
 const FormTitle = styled.h3`
@@ -136,10 +126,10 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
 
     // Валидация description
     if (!formData.description.trim()) {
-      newErrors.description = 'Поле description обязательно для заполнения';
+      newErrors.description = 'Обязательно для заполнения';
       newStatusInputs.description = 'error';
     } else if (formData.description.trim().length < 4) {
-      newErrors.description = 'Поле description должно содержать минимум 4 символа';
+      newErrors.description = 'Минимум 4 символа';
       newStatusInputs.description = 'error';
     } else {
       newStatusInputs.description = 'correct';
@@ -147,35 +137,34 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
 
     // Валидация category
     if (!formData.displayCategory) {
-      newErrors.displayCategory = 'Поле category обязательно для заполнения';
-    } else if (!Object.keys(categoryMap).includes(formData.displayCategory)) {
-      newErrors.displayCategory =
-        'Для category допустимы только значения Еда, Транспорт, Жилье, Развлечения, Образование, Другое';
+      newErrors.displayCategory = 'Обязательно для заполнения';
+    } else if (!categories.some(cat => cat.label === formData.displayCategory)) {
+      newErrors.displayCategory = 'Выберите одну из категорий: Еда, Транспорт, Жилье, Развлечения, Образование, Другое';
     }
 
     // Валидация date
     if (!formData.date) {
-      newErrors.date = 'Поле date обязательно для заполнения';
+      newErrors.date = 'Обязательно для заполнения';
       newStatusInputs.date = 'error';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      newErrors.date = 'Поле date должно быть в формате yyyy-MM-dd';
+      newErrors.date = 'Формат должен быть yyyy-MM-dd';
       newStatusInputs.date = 'error';
     } else {
       try {
         parse(formData.date, 'yyyy-MM-dd', new Date());
         newStatusInputs.date = 'correct';
       } catch {
-        newErrors.date = 'Поле date должно быть валидной датой';
+        newErrors.date = 'Неверная дата';
         newStatusInputs.date = 'error';
       }
     }
 
     // Валидация amount
     if (!formData.amount) {
-      newErrors.amount = 'Поле sum обязательно для заполнения';
+      newErrors.amount = 'Обязательно для заполнения';
       newStatusInputs.amount = 'error';
     } else if (isNaN(formData.amount) || Number(formData.amount) <= 0) {
-      newErrors.amount = 'Поле sum должно быть положительным числом';
+      newErrors.amount = 'Должно быть положительным числом';
       newStatusInputs.amount = 'error';
     } else {
       newStatusInputs.amount = 'correct';
@@ -192,7 +181,6 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     setIsActiveButton(true);
     setStatusInputs({ ...statusInputs, [name]: 'default' });
 
-    // Проверка валидности для description и amount
     if (name === 'description') {
       if (value.trim().length >= 4) {
         setStatusInputs({ ...statusInputs, [name]: 'correct' });
@@ -221,8 +209,8 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     }
   };
 
-  const handleCategorySelect = (category) => {
-    setFormData({ ...formData, displayCategory: category });
+  const handleCategorySelect = (categoryLabel) => {
+    setFormData({ ...formData, displayCategory: categoryLabel });
     setErrors({ ...errors, displayCategory: '' });
     setIsActiveButton(true);
   };
@@ -242,10 +230,9 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
         ...formData,
         id: formData.id,
         amount: parseInt(formData.amount, 10),
-        category: categoryMap[formData.displayCategory],
+        category: categories.find(cat => cat.label === formData.displayCategory)?.value,
         displayDate: formData.date,
       });
-      // Очищаем форму и сбрасываем состояния при успешном добавлении
       if (result.success && !editData) {
         setFormData({
           description: '',
@@ -292,15 +279,6 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
     return false;
   };
 
-  const categories = [
-    { name: 'Еда', icon: <FoodIcon /> },
-    { name: 'Транспорт', icon: <TransportIcon /> },
-    { name: 'Жилье', icon: <HousingIcon /> },
-    { name: 'Развлечения', icon: <EntertainmentIcon /> },
-    { name: 'Образование', icon: <EducationIcon /> },
-    { name: 'Другое', icon: <OtherIcon /> },
-  ];
-
   return (
     <>
       <FormTitle>{editData ? 'Редактирование' : 'Новый расход'}</FormTitle>
@@ -320,16 +298,19 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
         </InputWrapper>
         {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
         <FieldLabel>Категории</FieldLabel>
-        {categories.map((cat) => (
-          <CategoryButton
-            key={cat.name}
-            selected={formData.displayCategory === cat.name}
-            onClick={() => handleCategorySelect(cat.name)}
-          >
-            {cat.icon}
-            {cat.name}
-          </CategoryButton>
-        ))}
+        {categories.filter(cat => cat.value !== '').map((cat) => {
+          const IconComponent = cat.icon; // Получаем компонент иконки
+          return (
+            <CategoryButton
+              key={cat.value}
+              selected={formData.displayCategory === cat.label}
+              onClick={() => handleCategorySelect(cat.label)}
+            >
+              {IconComponent && <IconComponent />}
+              {cat.label}
+            </CategoryButton>
+          );
+        })}
         {errors.displayCategory && isSubmitted && (
           <ErrorStarContainer>*</ErrorStarContainer>
         )}

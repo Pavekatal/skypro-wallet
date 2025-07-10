@@ -6,29 +6,10 @@ import Header from '../components/Header';
 import ExpenseTable from './ExpenseTable';
 import ExpenseForm from './ExpenseForm';
 import FilterControls from './FilterControls';
-import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../components/api/transactions';
+import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../services/transactions';
 import { AuthContext } from '../context/AuthContext';
 import { format, parse } from 'date-fns';
-
-// Маппинг категорий для UI
-const categoryMap = {
-  food: 'Еда',
-  transport: 'Транспорт',
-  housing: 'Жилье',
-  joy: 'Развлечения',
-  education: 'Образование',
-  others: 'Другое',
-};
-
-// Обратный маппинг для API
-const reverseCategoryMap = {
-  Еда: 'food',
-  Транспорт: 'transport',
-  Жилье: 'housing',
-  Развлечения: 'joy',
-  Образование: 'education',
-  Другое: 'others',
-};
+import { categories } from '../constants/categories.js';
 
 // Стили
 const Container = styled.div`
@@ -157,7 +138,7 @@ const MainPage = () => {
           description: item.description,
           date: new Date(item.date),
           displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-          displayCategory: categoryMap[item.category] || item.category,
+          displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
         }));
         setExpenses(formattedExpenses);
       } catch (error) {
@@ -184,7 +165,7 @@ const MainPage = () => {
       description: expense.description,
       date: format(new Date(expense.date), 'yyyy-MM-dd'),
       displayDate: expense.displayDate,
-      displayCategory: categoryMap[expense.category] || expense.category,
+      displayCategory: categories.find(cat => cat.value === expense.category)?.label || expense.category,
       category: expense.category,
     });
   };
@@ -201,7 +182,7 @@ const MainPage = () => {
         description: item.description,
         date: new Date(item.date),
         displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-        displayCategory: categoryMap[item.category] || item.category,
+        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
       }));
       setExpenses(formattedExpenses);
       if (selectedId === id) {
@@ -226,11 +207,11 @@ const MainPage = () => {
       return { success: false };
     }
     try {
-      // Проверка данных перед отправкой
       if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
         throw new Error('Неверный формат даты');
       }
-      if (!reverseCategoryMap[data.displayCategory]) {
+      const categoryValue = categories.find(cat => cat.label === data.displayCategory)?.value;
+      if (!categoryValue) {
         throw new Error('Неверная категория');
       }
       let parsedDate;
@@ -245,7 +226,7 @@ const MainPage = () => {
         _id: data.id || undefined,
         sum: Number(data.amount),
         description: data.description,
-        category: reverseCategoryMap[data.displayCategory],
+        category: categoryValue,
         date: isoDate,
       };
       const updatedList = await addOrUpdateTransaction(formattedData, user.token);
@@ -256,12 +237,12 @@ const MainPage = () => {
         description: item.description,
         date: new Date(item.date),
         displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-        displayCategory: categoryMap[item.category] || item.category,
+        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
       }));
       setExpenses(formattedExpenses);
       setSelectedId(null);
       setEditData(null);
-      return { success: true }; // Возвращаем флаг успеха
+      return { success: true };
     } catch (error) {
       if (error.message.includes('401')) {
         toast.error('Пожалуйста, войдите в систему');
@@ -270,7 +251,7 @@ const MainPage = () => {
       } else {
         toast.error(error.message || 'Ошибка при сохранении транзакции');
       }
-      return { success: false }; // Возвращаем флаг неудачи
+      return { success: false };
     }
   };
 
