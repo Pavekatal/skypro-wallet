@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   CalendarWrapper,
   CalendarHeader,
@@ -15,6 +15,7 @@ import { formatDate, formatMonth, formatMDY } from './dateUtils';
 import { WEEKDAYS_SHORT, MONTH_NAMES } from './constants/constant.js';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { getTransactionsPeriod } from '../../services/transactions.js';
+import { AuthContext } from '../../context/AuthContext';
 
 /**
  * Календарь для выбора периода (месяц или год)
@@ -36,6 +37,9 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-11
+
+  const { user } = useContext(AuthContext);
+  const token = user?.token;
 
   /**
    * Обработка клика по дню в режиме "месяц"
@@ -116,7 +120,7 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         getTransactionsPeriod({
           start: startVal,
           end: endVal
-        })
+        }, token)
           .then(data => {
             if (typeof onTransactionsChange === 'function') {
               onTransactionsChange(data);
@@ -155,7 +159,7 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         getTransactionsPeriod({
           start: startVal,
           end: endVal
-        })
+        }, token)
           .then(data => {
             if (typeof onTransactionsChange === 'function') {
               onTransactionsChange(data);
