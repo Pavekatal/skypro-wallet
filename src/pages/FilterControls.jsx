@@ -1,119 +1,135 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { categories } from '../constants/categories.js';
+import React, { useState } from "react";
+import styled from "styled-components";
+import { categories } from "../constants/categories";
 
-// Стили для контейнера фильтров
 const FilterControlsWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 1.25rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.625rem;
+  }
 `;
 
-// Стили для кнопок открытия модальных окон
 const FilterButton = styled.button`
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   background: #ffffff;
-  color: ${props => (props.selected ? '#1FA46C' : '#333')};
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: background 0.3s ease;
-  text-decoration: ${props => (props.selected ? 'underline' : 'none')};
 
   &:hover {
     background: #f4f5f6;
   }
 
+  .selected {
+    color: #1fa46c;
+    text-decoration: underline;
+  }
+
   svg.arrow {
-    margin-left: 6px;
+    margin-left: 0.375rem;
     flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    width: 100%;
+    text-align: left;
   }
 `;
 
-// Стили для модального окна
 const Modal = styled.div`
   position: absolute;
-  top: 100%; /* Размещаем под кнопкой */
-  left: 0; /* Выравниваем по левому краю кнопки */
-  width: 176px;
-  max-height: 240px;
-  border: 0.5px solid #999999;
-  border-radius: 6px;
-  padding: 12px;
-  gap: 10px;
+  top: 100%;
+  left: 0;
+  width: 11rem;
+  max-height: 15rem;
+  border: 0.03125rem solid #999999;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  gap: 0.625rem;
   background: #ffffff;
-  box-shadow: 0px 20px 67px -12px #00000021;
-  opacity: 1;
+  box-shadow: 0 1.25rem 4.1875rem -0.75rem rgba(0, 0, 0, 0.13);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   z-index: 1000;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 9.375rem;
+    left: auto;
+    right: 0;
+  }
 `;
 
-// Стили для элементов списка в модальном окне
 const ModalItem = styled.button`
   display: inline-flex;
   align-items: center;
-  padding: 8px;
+  padding: 0.5rem;
   border: none;
-  background: ${props => (props.selected ? '#DBFFE9' : '#F4F5F6')};
-  color: ${props => (props.selected ? '#1FA46C' : '#333')};
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  background: ${({ selected }) => (selected ? "#DBFFE9" : "#F4F5F6")};
+  color: ${({ selected }) => (selected ? "#1FA46C" : "#333")};
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.875rem;
   text-align: left;
   cursor: pointer;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   transition: background 0.3s ease;
-  text-decoration: none; /* Убрано подчеркивание для выбранных элементов */
 
   svg.icon {
-    margin-right: 6px;
+    margin-right: 0.375rem;
   }
 
   &:hover {
     background: #f4f5f6;
   }
 
-  ${props =>
-    props.selected &&
+  ${({ selected }) =>
+    selected &&
     `
       svg.icon path {
         fill: #1FA46C;
       }
     `}
+
+  @media (max-width: 768px) {
+    padding: 0.375rem;
+    font-size: 0.75rem;
+  }
 `;
 
-// Компонент стрелочки
 const ArrowIcon = () => (
-  <svg
-    className="arrow"
-    width="7"
-    height="6"
-    viewBox="0 0 7 6"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg className="arrow" width="7" height="6" viewBox="0 0 7 6" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M3.5 5.5L0.468911 0.25L6.53109 0.25L3.5 5.5Z" fill="#1FA46C" />
   </svg>
 );
 
+// Компонент фильтров и сортировки
 const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }) => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
 
   const sortOptions = [
-    { display: 'Без сортировки', value: '' },
-    { display: 'По дате', value: 'date' },
-    { display: 'По сумме', value: 'sum' },
+    { display: "Без сортировки", value: "" },
+    { display: "По дате", value: "date" },
+    { display: "По сумме", value: "sum" },
   ];
 
+  // Обработка выбора фильтра
   const handleFilterSelect = (value) => {
     setFilterCategory(value);
     setIsFilterModalOpen(false);
   };
 
+  // Обработка выбора сортировки
   const handleSortSelect = (value) => {
     setSortBy(value);
     setIsSortModalOpen(false);
@@ -121,13 +137,15 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
 
   return (
     <FilterControlsWrapper>
-      <div style={{ position: 'relative' }}>
-        <FilterButton
-          selected={filterCategory !== ''}
-          onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
-        >
-          Фильтровать по: {categories.find(cat => cat.value === filterCategory)?.label || 'Все категории'}
-          {filterCategory !== '' && <ArrowIcon />}
+      <div style={{ position: "relative" }}>
+        <FilterButton onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}>
+          Фильтровать по:{" "}
+          <span className={filterCategory !== "" ? "selected" : ""}>
+            {filterCategory !== ""
+              ? categories.find((cat) => cat.value === filterCategory)?.label
+              : "Все категории"}
+            {filterCategory !== "" && <ArrowIcon />}
+          </span>
         </FilterButton>
         {isFilterModalOpen && (
           <Modal>
@@ -147,13 +165,13 @@ const FilterControls = ({ filterCategory, setFilterCategory, sortBy, setSortBy }
           </Modal>
         )}
       </div>
-      <div style={{ position: 'relative' }}>
-        <FilterButton
-          selected={sortBy !== ''}
-          onClick={() => setIsSortModalOpen(!isSortModalOpen)}
-        >
-          Сортировать по: {sortOptions.find(opt => opt.value === sortBy)?.display || 'Без сортировки'}
-          {sortBy !== '' && <ArrowIcon />}
+      <div style={{ position: "relative" }}>
+        <FilterButton onClick={() => setIsSortModalOpen(!isSortModalOpen)}>
+          Сортировать по:{" "}
+          <span className={sortBy !== "" ? "selected" : ""}>
+            {sortBy !== "" ? sortOptions.find((opt) => opt.value === sortBy)?.display : "Без сортировки"}
+            {sortBy !== "" && <ArrowIcon />}
+          </span>
         </FilterButton>
         {isSortModalOpen && (
           <Modal>
