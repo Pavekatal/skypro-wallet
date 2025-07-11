@@ -240,53 +240,22 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         </div>
       )}
 
-      {/* Вкладки месяцев */}
-      {viewMode === 'month' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
-          {MONTH_NAMES.map((name, idx) => (
-            <span
-              key={name}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 12,
-                background: idx === currentMonth ? '#CFF8E2' : '#F1F1F1',
-                color: idx === currentMonth ? '#24A148' : '#000',
-                fontWeight: idx === currentMonth ? 600 : 400,
-                cursor: 'pointer',
-                fontSize: 14,
-                minWidth: 60,
-                textAlign: 'center',
-                border: idx === currentMonth ? '1px solid #24A148' : '1px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onClick={() => setCurrentMonth(idx)}
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* В зависимости от режима — показываем дни или месяцы */}
       {viewMode === 'month' ? (
         <>
-          {/* Заголовки дней недели */}
-          <WeekdaysHeader>
-            {WEEKDAYS_SHORT.map(day => (
-              <Weekday key={day}>{day}</Weekday>
+          {/* Заголовки дней недели убираем, так как они будут в каждом MonthView */}
+          <ScrollContainer style={{ display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', maxHeight: 700 }}>
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <MonthView
+                key={idx}
+                month={idx + 1}
+                year={currentYear}
+                title={`${MONTH_NAMES[idx]} ${currentYear}`}
+                startDate={selectedStartDay}
+                endDate={selectedEndDay}
+                onDayClick={handleDayClick}
+              />
             ))}
-          </WeekdaysHeader>
-
-          {/* Один месяц для выбора дат */}
-          <ScrollContainer>
-            <MonthView
-              month={currentMonth + 1}
-              year={currentYear}
-              title={`${MONTH_NAMES[currentMonth]} ${currentYear}`}
-              startDate={selectedStartDay}
-              endDate={selectedEndDay}
-              onDayClick={handleDayClick}
-            />
           </ScrollContainer>
         </>
       ) : (
