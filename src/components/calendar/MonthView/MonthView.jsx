@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { DayCell, EmptyDayCell } from '../DayCell.styled.js';
+import { WEEKDAYS_SHORT } from '../constants/constant.js';
+import { WeekdaysHeader, Weekday } from '../Calendar.styled';
 
 /**
  * Месячный календарь: сетка дней с возможностью выбрать диапазон

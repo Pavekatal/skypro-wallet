@@ -243,7 +243,12 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
       {/* В зависимости от режима — показываем дни или месяцы */}
       {viewMode === 'month' ? (
         <>
-          {/* Заголовки дней недели убираем, так как они будут в каждом MonthView */}
+          {/* Фиксированные дни недели */}
+          <WeekdaysHeader>
+            {WEEKDAYS_SHORT.map((wd) => (
+              <Weekday key={wd}>{wd}</Weekday>
+            ))}
+          </WeekdaysHeader>
           <ScrollContainer style={{ display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', maxHeight: 700 }}>
             {Array.from({ length: 12 }).map((_, idx) => (
               <MonthView
