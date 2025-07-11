@@ -1,15 +1,19 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Outlet } from 'react-router-dom';
-import styled from 'styled-components';
-import { toast } from 'react-toastify';
-import Header from '../components/Header';
-import ExpenseTable from './ExpenseTable';
-import ExpenseForm from './ExpenseForm';
-import FilterControls from './FilterControls';
-import { getTransactions, addOrUpdateTransaction, deleteTransaction } from '../services/transactions';
-import { AuthContext } from '../context/AuthContext';
-import { format, parse } from 'date-fns';
-import { categories } from '../constants/categories.js';
+import React, { useState, useEffect, useContext } from "react";
+import { Outlet } from "react-router-dom";
+import styled from "styled-components";
+import { toast } from "react-toastify";
+import Header from "../components/Header";
+import ExpenseTable from "./ExpenseTable";
+import ExpenseForm from "./ExpenseForm";
+import FilterControls from "./FilterControls";
+import {
+  getTransactions,
+  addOrUpdateTransaction,
+  deleteTransaction,
+} from "../services/transactions";
+import { AuthContext } from "../context/AuthContext";
+import { format, parse } from "date-fns";
+import { categories } from "../constants/categories.js";
 
 // Стили
 const Container = styled.div`
@@ -39,7 +43,7 @@ const MainContent = styled.div`
 `;
 
 const MainTitle = styled.h2`
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 700;
   font-size: 32px;
   color: #000000;
@@ -84,7 +88,7 @@ const TableSection = styled.div`
 `;
 
 const TableTitle = styled.h3`
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 700;
   font-size: 24px;
   line-height: 100%;
@@ -115,15 +119,15 @@ const MainPage = () => {
   const { user } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [filterCategory, setFilterCategory] = useState('');
-  const [sortBy, setSortBy] = useState('');
+  const [filterCategory, setFilterCategory] = useState("");
+  const [sortBy, setSortBy] = useState("");
   const [editData, setEditData] = useState(null);
 
   // Загрузка транзакций
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!user?.token) {
-        toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+        toast.error("Токен отсутствует, пожалуйста, войдите в систему");
         return;
       }
       try {
@@ -137,17 +141,19 @@ const MainPage = () => {
           amount: item.sum,
           description: item.description,
           date: new Date(item.date),
-          displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-          displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+          displayDate: format(new Date(item.date), "dd.MM.yyyy"),
+          displayCategory:
+            categories.find((cat) => cat.value === item.category)?.label ||
+            item.category,
         }));
         setExpenses(formattedExpenses);
       } catch (error) {
-        if (error.message.includes('401')) {
-          toast.error('Пожалуйста, войдите в систему');
-        } else if (error.message.includes('400')) {
-          toast.error(error.message || 'Неверные параметры запроса');
+        if (error.message.includes("401")) {
+          toast.error("Пожалуйста, войдите в систему");
+        } else if (error.message.includes("400")) {
+          toast.error(error.message || "Неверные параметры запроса");
         } else {
-          toast.error(error.message || 'Ошибка при загрузке транзакций');
+          toast.error(error.message || "Ошибка при загрузке транзакций");
         }
         setExpenses([]);
       }
@@ -163,9 +169,11 @@ const MainPage = () => {
       _id: expense._id,
       sum: expense.amount,
       description: expense.description,
-      date: format(new Date(expense.date), 'yyyy-MM-dd'),
+      date: format(new Date(expense.date), "yyyy-MM-dd"),
       displayDate: expense.displayDate,
-      displayCategory: categories.find(cat => cat.value === expense.category)?.label || expense.category,
+      displayCategory:
+        categories.find((cat) => cat.value === expense.category)?.label ||
+        expense.category,
       category: expense.category,
     });
   };
@@ -173,6 +181,8 @@ const MainPage = () => {
   // Обработка удаления
   const handleDelete = async (id) => {
     if (!user?.token) return;
+    const yesDelete = confirm("Вы действительно хотите удалить запись?");
+    if (!yesDelete) return;
     try {
       const updatedList = await deleteTransaction(id, user.token);
       const formattedExpenses = updatedList.map((item) => ({
@@ -181,21 +191,24 @@ const MainPage = () => {
         amount: item.sum,
         description: item.description,
         date: new Date(item.date),
-        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+        displayDate: format(new Date(item.date), "dd.MM.yyyy"),
+        displayCategory:
+          categories.find((cat) => cat.value === item.category)?.label ||
+          item.category,
       }));
       setExpenses(formattedExpenses);
+      toast.success("Трназакция успешно удалена!");
       if (selectedId === id) {
         setSelectedId(null);
         setEditData(null);
       }
     } catch (error) {
-      if (error.message.includes('401')) {
-        toast.error('Пожалуйста, войдите в систему');
-      } else if (error.message.includes('400')) {
-        toast.error(error.message || 'Транзакция не найдена');
+      if (error.message.includes("401")) {
+        toast.error("Пожалуйста, войдите в систему");
+      } else if (error.message.includes("400")) {
+        toast.error(error.message || "Транзакция не найдена");
       } else {
-        toast.error(error.message || 'Ошибка при удалении транзакции');
+        toast.error(error.message || "Ошибка при удалении транзакции");
       }
     }
   };
@@ -203,22 +216,24 @@ const MainPage = () => {
   // Обработка отправки формы
   const handleFormSubmit = async (data) => {
     if (!user?.token) {
-      toast.error('Токен отсутствует, пожалуйста, войдите в систему');
+      toast.error("Токен отсутствует, пожалуйста, войдите в систему");
       return { success: false };
     }
     try {
       if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
-        throw new Error('Неверный формат даты');
+        throw new Error("Неверный формат даты");
       }
-      const categoryValue = categories.find(cat => cat.label === data.displayCategory)?.value;
+      const categoryValue = categories.find(
+        (cat) => cat.label === data.displayCategory
+      )?.value;
       if (!categoryValue) {
-        throw new Error('Неверная категория');
+        throw new Error("Неверная категория");
       }
       let parsedDate;
       try {
-        parsedDate = parse(data.date, 'yyyy-MM-dd', new Date());
+        parsedDate = parse(data.date, "yyyy-MM-dd", new Date());
       } catch {
-        throw new Error('Неверное значение даты');
+        throw new Error("Неверное значение даты");
       }
       const isoDate = format(parsedDate, "yyyy-MM-dd'T00:00:00.000Z'");
       const formattedData = {
@@ -229,27 +244,32 @@ const MainPage = () => {
         category: categoryValue,
         date: isoDate,
       };
-      const updatedList = await addOrUpdateTransaction(formattedData, user.token);
+      const updatedList = await addOrUpdateTransaction(
+        formattedData,
+        user.token
+      );
       const formattedExpenses = updatedList.map((item) => ({
         ...item,
         id: item._id,
         amount: item.sum,
         description: item.description,
         date: new Date(item.date),
-        displayDate: format(new Date(item.date), 'dd.MM.yyyy'),
-        displayCategory: categories.find(cat => cat.value === item.category)?.label || item.category,
+        displayDate: format(new Date(item.date), "dd.MM.yyyy"),
+        displayCategory:
+          categories.find((cat) => cat.value === item.category)?.label ||
+          item.category,
       }));
       setExpenses(formattedExpenses);
       setSelectedId(null);
       setEditData(null);
       return { success: true };
     } catch (error) {
-      if (error.message.includes('401')) {
-        toast.error('Пожалуйста, войдите в систему');
-      } else if (error.message.includes('400')) {
-        toast.error(error.message || 'Неверные данные транзакции');
+      if (error.message.includes("401")) {
+        toast.error("Пожалуйста, войдите в систему");
+      } else if (error.message.includes("400")) {
+        toast.error(error.message || "Неверные данные транзакции");
       } else {
-        toast.error(error.message || 'Ошибка при сохранении транзакции');
+        toast.error(error.message || "Ошибка при сохранении транзакции");
       }
       return { success: false };
     }

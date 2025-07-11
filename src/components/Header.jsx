@@ -1,7 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import { LogoIcon } from '../components/Icons.jsx';
+import React, { useContext } from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import { LogoIcon } from "../components/Icons.jsx";
+import { AuthContext } from "../context/AuthContext.js";
 
 const HeaderWrapper = styled.header`
   display: flex;
@@ -12,11 +13,15 @@ const HeaderWrapper = styled.header`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 `;
 
-const Logo = styled.div`
+export const Logo = styled.div`
   margin-left: 120px;
   svg {
     width: 144px;
     height: 19px;
+  }
+
+  @media screen and (min-width: 320px) and (max-width: 767px) {
+    margin-left: 16px;
   }
 `;
 
@@ -28,15 +33,15 @@ const Nav = styled.nav`
 `;
 
 const NavButton = styled(Link)`
-  text-decoration: ${props => props.$active ? 'underline' : 'none'};
+  text-decoration: ${(props) => (props.$active ? "underline" : "none")};
   color: #333;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: ${props => (props.$active || props.hover) ? '600' : '400'};
+  font-family: "Montserrat", sans-serif;
+  font-weight: ${(props) => (props.$active || props.hover ? "600" : "400")};
   font-size: 16px;
   cursor: pointer;
   transition: color 0.3s ease;
   &:hover {
-    color: #1FA46C;
+    color: #1fa46c;
     font-weight: 600;
     text-decoration: underline;
   }
@@ -47,27 +52,36 @@ const LogoutButton = styled.button`
   background: none;
   border: none;
   color: #333;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-weight: 400;
   font-size: 16px;
   cursor: pointer;
   transition: color 0.3s ease;
   &:hover {
-    color: #1FA46C;
+    color: #1fa46c;
   }
 `;
 
 const Header = ({ currentPath }) => {
+  const { logout } = useContext(AuthContext);
+
   return (
     <HeaderWrapper>
       <Logo>
-        <LogoIcon/>
+        <LogoIcon />
       </Logo>
       <Nav>
-        <NavButton to="/" $active={currentPath === '/'}>Мои расходы</NavButton>
-        <NavButton to="/spending-analysis" $active={currentPath === '/spending-analysis'}>Анализ расходов</NavButton>
+        <NavButton to="/" $active={currentPath === "/"}>
+          Мои расходы
+        </NavButton>
+        <NavButton
+          to="/spending-analysis"
+          $active={currentPath === "/spending-analysis"}
+        >
+          Анализ расходов
+        </NavButton>
       </Nav>
-      <LogoutButton onClick={() => window.location.href = '/sign-in'}>Выйти</LogoutButton>
+      <LogoutButton onClick={logout}>Выйти</LogoutButton>
     </HeaderWrapper>
   );
 };

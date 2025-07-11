@@ -1,7 +1,7 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import Header from '../components/Header';
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import { Logo } from "../components/Header";
+import { LogoIcon } from "../components/Icons";
 
 const Container = styled.div`
   display: flex;
@@ -19,35 +19,53 @@ const Content = styled.div`
   width: 100%;
   max-width: 400px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+
+  h2,
+  p {
+    font-family: "Montserrat", sans-serif;
+  }
 `;
 
-const FormButton = styled.button`
-  width: 100%;
-  padding: 10px;
-  background: #00C853;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+const NavButton = styled(Link)`
+  text-decoration: ${(props) => (props.active ? "underline" : "none")};
+  color: #333;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #1fa46c;
+    font-weight: 600;
+    text-decoration: underline;
+  }
 `;
 
 const NotFoundPage = () => {
-  const navigate = useNavigate();
-
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
   return (
     <>
-      <Header currentPath="*" />
+      <Logo
+        style={{
+          width: "100%",
+          height: "64px",
+          backgroundColor: "#FFFFFF",
+          display: "flex",
+          alignItems: "center ",
+        }}
+      >
+        <LogoIcon />
+      </Logo>
       <Container>
         <Content>
           <h2>404 - Страница не найдена</h2>
           <p>К сожалению, запрашиваемая страница не существует.</p>
-          <FormButton onClick={handleGoHome}>Вернуться на главную</FormButton>
+          <NavButton to="/">Вернуться на главную</NavButton>
         </Content>
       </Container>
     </>

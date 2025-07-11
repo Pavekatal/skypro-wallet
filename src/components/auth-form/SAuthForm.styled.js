@@ -21,6 +21,17 @@ export const AuthFormModalBlock = styled.div`
   padding: 32px;
   border-radius: 30px;
   box-shadow: 0px 20px 67px -12px rgba(0, 0, 0, 0.13);
+
+  @media screen and (min-width: 320px) and (max-width: 767px) {
+    max-width: none;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0px;
+  }
 `;
 
 export const AuthFormModalTtl = styled.div`
