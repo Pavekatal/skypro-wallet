@@ -59,15 +59,15 @@ const ActionButton = styled.button`
   font-size: 1rem;
   transition: color 0.3s ease;
 
-  ${({ active }) =>
-    active &&
-    `
-      svg path {
-        fill: #1A7F50;
-      }
-    `}
+  svg path {
+    transition: fill 0.3s ease;
+  }
 
-  &:hover svg {
+  &[active="true"] svg path {
+    fill: #1A7F50;
+  }
+
+  &:hover svg path {
     fill: #1FA46C;
   }
 `;
@@ -153,13 +153,13 @@ const ExpenseTable = ({ expenses, onEdit, onDelete, activeExpenseId }) => (
               <TableCell>
                 <ActionButton
                   onClick={() => onEdit(expense)}
-                  active={expense.id === activeExpenseId}
+                  active={expense.id === activeExpenseId ? "true" : undefined}
                 >
                   <EditIcon />
                 </ActionButton>
                 <ActionButton
                   onClick={() => onDelete(expense.id)}
-                  active={expense.id === activeExpenseId}
+                  active={expense.id === activeExpenseId ? "true" : undefined}
                 >
                   <DeleteIcon />
                 </ActionButton>
@@ -212,4 +212,4 @@ const ExpenseTable = ({ expenses, onEdit, onDelete, activeExpenseId }) => (
   </>
 );
 
-export default ExpenseTable;
+export default ExpenseTable; 
