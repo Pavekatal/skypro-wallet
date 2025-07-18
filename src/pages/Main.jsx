@@ -9,7 +9,7 @@ import { getTransactions, addOrUpdateTransaction, deleteTransaction } from "../s
 import { AuthContext } from "../context/AuthContext";
 import { format, parse } from "date-fns";
 import { categories } from "../constants/categories";
-import MainPageMobile from "./MainPageMobile";
+import MainPageMobile from "../Mobile/MainPageMobile";
 
 // Стили для десктопной версии
 const Container = styled.div`
