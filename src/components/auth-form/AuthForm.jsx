@@ -187,7 +187,7 @@ const AuthForm = ({ isSignUp }) => {
               <InputWrapper>
                 <Input
                   id="formlogin"
-                  type="email"
+                  type="text" // Изменён с type="email" на type="text"
                   name="login"
                   placeholder="Эл. почта"
                   value={values.login}

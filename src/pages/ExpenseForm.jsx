@@ -1,49 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { ErrorMessage } from '../components/CommonComponents.jsx';
-import { format, parse } from 'date-fns';
-import { InputWrapper } from '../components/inputs/SInput.styled.js';
-import Input from '../components/inputs/Input.jsx';
-import Button from '../components/buttons/Button.jsx';
-import { ErrorStarContainer } from '../components/errors/SErrorContainer.styled.js';
-import { categories } from '../constants/categories.js';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { ErrorMessage } from "../components/CommonComponents.jsx";
+import { InputWrapper } from "../components/inputs/SInput.styled.js";
+import Input from "../components/inputs/Input.jsx";
+import Button from "../components/buttons/Button.jsx";
+import { ErrorStarContainer } from "../components/errors/SErrorContainer.styled.js";
+import { categories } from "../constants/categories";
 
-// Стили для заголовка формы
 const FormTitle = styled.h3`
   font-weight: 700;
-  font-size: 24px;
+  font-size: 1.5rem;
   line-height: 100%;
-  margin: 15px 0 20px 20px;
+  margin: 0.9375rem 0 1.25rem 1.25rem;
   color: #333;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+    margin: 0.625rem 0 0.9375rem 0.625rem;
+  }
 `;
 
-// Стили для заголовков полей
 const FieldLabel = styled.div`
   font-weight: 600;
-  font-size: 16px;
-  margin: 20px 0 20px 20px;
+  font-size: 1rem;
+  margin: 1.25rem 0 1.25rem 1.25rem;
   color: #333;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
+
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+    margin: 0.9375rem 0 0.9375rem 0.625rem;
+  }
 `;
 
-// Стили для кнопок категорий
 const CategoryButton = styled.button`
   display: inline-flex;
   align-items: center;
-  padding: 8px 15px;
-  margin: 5px;
+  padding: 0.5rem 0.9375rem;
+  margin: 0.3125rem;
   border: none;
-  border-radius: 30px;
-  background: #F4F5F6;
+  border-radius: 1.875rem;
+  background: #f4f5f6;
   color: #333;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.3s ease;
 
   svg {
-    margin-right: 6px;
+    margin-right: 0.375rem;
   }
 
   &:hover {
@@ -62,226 +68,137 @@ const CategoryButton = styled.button`
         background: #C1FFD6;
       }
     `}
+
+  @media (max-width: 768px) {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.625rem;
+    margin: 0.1875rem;
+  }
 `;
 
-// Контейнер для кнопок с отступом
 const ButtonWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+
+  @media (max-width: 768px) {
+    gap: 0.3125rem;
+    margin-top: 0.625rem;
+  }
 `;
 
+// Компонент формы для добавления/редактирования расходов
 const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    description: '',
-    displayCategory: '',
-    date: '',
-    amount: '',
+    description: "",
+    categoryLabel: "",
+    date: "",
+    amount: "",
   });
   const [errors, setErrors] = useState({});
   const [statusInputs, setStatusInputs] = useState({
-    description: 'default',
-    date: 'default',
-    amount: 'default',
+    description: "default",
+    date: "default",
+    amount: "default",
   });
-  const [isActiveButton, setIsActiveButton] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Инициализация формы при редактировании
   useEffect(() => {
     if (editData) {
       setFormData({
-        id: editData.id || undefined,
-        description: editData.description || '',
-        displayCategory: editData.displayCategory || '',
-        date: editData.displayDate
-          ? format(parse(editData.displayDate, 'dd.MM.yyyy', new Date()), 'yyyy-MM-dd')
-          : '',
-        amount: editData.amount ? editData.amount.toString() : '',
+        id: editData.id,
+        description: editData.description,
+        categoryLabel: editData.categoryLabel,
+        date: editData.date,
+        amount: editData.amount.toString(),
       });
-      setStatusInputs({
-        description: 'default',
-        date: 'default',
-        amount: 'default',
-      });
-      setIsActiveButton(true);
-      setIsSubmitted(false);
+      setStatusInputs({ description: "default", date: "default", amount: "default" });
       setErrors({});
+      setIsSubmitted(false);
     } else {
-      setFormData({ description: '', displayCategory: '', date: '', amount: '' });
-      setStatusInputs({
-        description: 'default',
-        date: 'default',
-        amount: 'default',
-      });
-      setIsActiveButton(true);
-      setIsSubmitted(false);
+      setFormData({ description: "", categoryLabel: "", date: "", amount: "" });
+      setStatusInputs({ description: "default", date: "default", amount: "default" });
       setErrors({});
+      setIsSubmitted(false);
     }
   }, [editData]);
 
-  const validateForm = () => {
-    const newErrors = {};
-    const newStatusInputs = { ...statusInputs };
-
-    // Валидация description
-    if (!formData.description.trim()) {
-      newErrors.description = 'Обязательно для заполнения';
-      newStatusInputs.description = 'error';
-    } else if (formData.description.trim().length < 4) {
-      newErrors.description = 'Минимум 4 символа';
-      newStatusInputs.description = 'error';
-    } else {
-      newStatusInputs.description = 'correct';
+  // Валидация полей формы
+  const validateField = (name, value) => {
+    if (name === "description") {
+      if (!value.trim()) return "Обязательно";
+      if (value.trim().length < 4) return "Минимум 4 символа";
+      return "";
     }
-
-    // Валидация category
-    if (!formData.displayCategory) {
-      newErrors.displayCategory = 'Обязательно для заполнения';
-    } else if (!categories.some(cat => cat.label === formData.displayCategory)) {
-      newErrors.displayCategory = 'Выберите одну из категорий: Еда, Транспорт, Жилье, Развлечения, Образование, Другое';
+    if (name === "categoryLabel") {
+      return value ? "" : "Обязательно";
     }
-
-    // Валидация date
-    if (!formData.date) {
-      newErrors.date = 'Обязательно для заполнения';
-      newStatusInputs.date = 'error';
-    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      newErrors.date = 'Формат должен быть yyyy-MM-dd';
-      newStatusInputs.date = 'error';
-    } else {
-      try {
-        parse(formData.date, 'yyyy-MM-dd', new Date());
-        newStatusInputs.date = 'correct';
-      } catch {
-        newErrors.date = 'Неверная дата';
-        newStatusInputs.date = 'error';
-      }
+    if (name === "date") {
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value))
+        ? ""
+        : "Неверный формат";
     }
-
-    // Валидация amount
-    if (!formData.amount) {
-      newErrors.amount = 'Обязательно для заполнения';
-      newStatusInputs.amount = 'error';
-    } else if (isNaN(formData.amount) || Number(formData.amount) <= 0) {
-      newErrors.amount = 'Должно быть положительным числом';
-      newStatusInputs.amount = 'error';
-    } else {
-      newStatusInputs.amount = 'correct';
+    if (name === "amount") {
+      return !isNaN(value) && Number(value) > 0 ? "" : "Положительное число";
     }
-
-    setStatusInputs(newStatusInputs);
-    return newErrors;
+    return "";
   };
 
+  // Обработка изменения полей
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setErrors({ ...errors, [name]: '' });
-    setIsActiveButton(true);
-    setStatusInputs({ ...statusInputs, [name]: 'default' });
-
-    if (name === 'description') {
-      if (value.trim().length >= 4) {
-        setStatusInputs({ ...statusInputs, [name]: 'correct' });
-      } else {
-        setStatusInputs({ ...statusInputs, [name]: 'error' });
-      }
-    }
-    if (name === 'amount') {
-      if (value && !isNaN(value) && Number(value) > 0) {
-        setStatusInputs({ ...statusInputs, [name]: 'correct' });
-      } else {
-        setStatusInputs({ ...statusInputs, [name]: 'error' });
-      }
-    }
-    if (name === 'date') {
-      if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        try {
-          parse(value, 'yyyy-MM-dd', new Date());
-          setStatusInputs({ ...statusInputs, [name]: 'correct' });
-        } catch {
-          setStatusInputs({ ...statusInputs, [name]: 'error' });
-        }
-      } else {
-        setStatusInputs({ ...statusInputs, [name]: 'error' });
-      }
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setStatusInputs((prev) => ({
+      ...prev,
+      [name]: validateField(name, value) ? "default" : "error",
+    }));
   };
 
+  // Обработка выбора категории
   const handleCategorySelect = (categoryLabel) => {
-    setFormData({ ...formData, displayCategory: categoryLabel });
-    setErrors({ ...errors, displayCategory: '' });
-    setIsActiveButton(true);
+    setFormData((prev) => ({ ...prev, categoryLabel }));
+    setErrors((prev) => ({ ...prev, categoryLabel: "" }));
   };
 
+  // Обработка отправки формы
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length === 0) {
-      setStatusInputs({
-        description: 'default',
-        date: 'default',
-        amount: 'default',
-      });
-      console.log('Данные формы перед отправкой:', formData);
+
+    const newErrors = {
+      description: validateField("description", formData.description),
+      categoryLabel: validateField("categoryLabel", formData.categoryLabel),
+      date: validateField("date", formData.date),
+      amount: validateField("amount", formData.amount),
+    };
+
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).every((error) => !error)) {
       const result = await onSubmit({
         ...formData,
-        id: formData.id,
         amount: parseInt(formData.amount, 10),
-        category: categories.find(cat => cat.label === formData.displayCategory)?.value,
-        displayDate: formData.date,
+        category: categories.find((cat) => cat.label === formData.categoryLabel)?.value,
+        formattedDate: formData.date,
       });
       if (result.success && !editData) {
-        setFormData({
-          description: '',
-          displayCategory: '',
-          date: '',
-          amount: '',
-        });
-        setStatusInputs({
-          description: 'default',
-          date: 'default',
-          amount: 'default',
-        });
+        setFormData({ description: "", categoryLabel: "", date: "", amount: "" });
+        setStatusInputs({ description: "default", date: "default", amount: "default" });
         setErrors({});
         setIsSubmitted(false);
-        setIsActiveButton(true);
       }
-    } else {
-      setStatusInputs({
-        description: newErrors.description ? 'error' : 'correct',
-        date: newErrors.date ? 'error' : 'correct',
-        amount: newErrors.amount ? 'error' : 'correct',
-      });
-      setIsActiveButton(false);
-      setErrors(newErrors);
     }
   };
 
-  const isValidInput = (value, field) => {
-    if (field === 'description') {
-      return value.trim() !== '' && value.trim().length >= 4;
-    }
-    if (field === 'date') {
-      if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      try {
-        parse(value, 'yyyy-MM-dd', new Date());
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    if (field === 'amount') {
-      return value && !isNaN(value) && Number(value) > 0;
-    }
-    return false;
-  };
+  // Проверка, активна ли кнопка
+  const isButtonActive = Object.values(errors).every((error) => !error);
 
   return (
     <>
-      <FormTitle>{editData ? 'Редактирование' : 'Новый расход'}</FormTitle>
+      <FormTitle>{editData ? "Редактирование" : "Новый расход"}</FormTitle>
       <form onSubmit={handleSubmit}>
         <FieldLabel>Описание</FieldLabel>
         <InputWrapper>
@@ -292,29 +209,27 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
             placeholder="Введите описание"
             statusInput={statusInputs.description}
           />
-          {errors.description && isSubmitted && (
-            <ErrorStarContainer>*</ErrorStarContainer>
-          )}
+          {errors.description && isSubmitted && <ErrorStarContainer>*</ErrorStarContainer>}
         </InputWrapper>
         {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
         <FieldLabel>Категории</FieldLabel>
-        {categories.filter(cat => cat.value !== '').map((cat) => {
-          const IconComponent = cat.icon; // Получаем компонент иконки
-          return (
-            <CategoryButton
-              key={cat.value}
-              selected={formData.displayCategory === cat.label}
-              onClick={() => handleCategorySelect(cat.label)}
-            >
-              {IconComponent && <IconComponent />}
-              {cat.label}
-            </CategoryButton>
-          );
-        })}
-        {errors.displayCategory && isSubmitted && (
-          <ErrorStarContainer>*</ErrorStarContainer>
-        )}
-        {errors.displayCategory && <ErrorMessage>{errors.displayCategory}</ErrorMessage>}
+        {categories
+          .filter((cat) => cat.value !== "")
+          .map((cat) => {
+            const IconComponent = cat.icon;
+            return (
+              <CategoryButton
+                key={cat.value}
+                selected={formData.categoryLabel === cat.label}
+                onClick={() => handleCategorySelect(cat.label)}
+              >
+                {IconComponent && <IconComponent />}
+                {cat.label}
+              </CategoryButton>
+            );
+          })}
+        {errors.categoryLabel && isSubmitted && <ErrorStarContainer>*</ErrorStarContainer>}
+        {errors.categoryLabel && <ErrorMessage>{errors.categoryLabel}</ErrorMessage>}
         <FieldLabel>Дата</FieldLabel>
         <InputWrapper>
           <Input
@@ -342,7 +257,7 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
         {errors.amount && <ErrorMessage>{errors.amount}</ErrorMessage>}
         {editData ? (
           <ButtonWrapper>
-            <Button type="submit" isActive={isActiveButton}>
+            <Button type="submit" isActive={isButtonActive}>
               Сохранить редактирование
             </Button>
             <Button isActive={true} onClick={onCancel}>
@@ -350,7 +265,7 @@ const ExpenseForm = ({ editData, onSubmit, onCancel }) => {
             </Button>
           </ButtonWrapper>
         ) : (
-          <Button type="submit" isActive={isActiveButton}>
+          <Button type="submit" isActive={isButtonActive}>
             Добавить новый расход
           </Button>
         )}
