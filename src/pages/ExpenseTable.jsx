@@ -9,7 +9,7 @@ const Table = styled.table`
   margin-top: 1.25rem;
 
   @media (max-width: 768px) {
-    display: none; // Скрываем таблицу на мобильных
+    display: none; /* Скрываем таблицу на мобильных */
   }
 `;
 
@@ -59,20 +59,18 @@ const ActionButton = styled.button`
   font-size: 1rem;
   transition: color 0.3s ease;
 
-  ${({ active }) =>
-    active &&
-    `
-      svg path {
-        fill: #1A7F50;
-      }
-    `}
+  svg path {
+    transition: fill 0.3s ease;
+  }
 
-  &:hover svg {
+  &[active="true"] svg path {
+    fill: #1A7F50;
+  }
+
+  &:hover svg path {
     fill: #1FA46C;
   }
 `;
-
-// Убираем мобильную карточную версию (удалено)
 
 const ExpenseTable = ({ expenses, onEdit, onDelete, activeExpenseId }) => (
   <Table>
@@ -88,7 +86,7 @@ const ExpenseTable = ({ expenses, onEdit, onDelete, activeExpenseId }) => (
     <tbody>
       {expenses.length === 0 ? (
         <tr>
-          <TableCell colSpan="5">Нет данных</TableCell>
+          <TableCell colSpan={5}>Нет данных</TableCell>
         </tr>
       ) : (
         expenses.map((expense) => (
@@ -100,13 +98,17 @@ const ExpenseTable = ({ expenses, onEdit, onDelete, activeExpenseId }) => (
             <TableCell>
               <ActionButton
                 onClick={() => onEdit(expense)}
-                active={expense.id === activeExpenseId}
+                active={expense.id === activeExpenseId ? "true" : undefined}
+                aria-label={`Редактировать расход: ${expense.description}`}
+                type="button"
               >
                 <EditIcon />
               </ActionButton>
               <ActionButton
                 onClick={() => onDelete(expense.id)}
-                active={expense.id === activeExpenseId}
+                active={expense.id === activeExpenseId ? "true" : undefined}
+                aria-label={`Удалить расход: ${expense.description}`}
+                type="button"
               >
                 <DeleteIcon />
               </ActionButton>

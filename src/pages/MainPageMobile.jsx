@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
 import Header from "../components/Header"; // если не используется, можно удалить
-import ExpenseTable from "./ExpenseTable"; // если не используется, можно удалить
 import ExpenseForm from "./ExpenseForm";
 import FilterControls from "./FilterControls";
 import { LogoIcon } from "../components/Icons.jsx";
 
-// Иконка плюса, используется в кнопке "Новый расход"
+// Иконка плюса для кнопки "Новый расход"
 const PlusIcon = () => (
   <svg
     width="12"
@@ -28,15 +27,16 @@ const PlusIcon = () => (
 // --- Стили ---
 
 const Container = styled.div`
-  padding: 1rem 0;
   background: #f5f5f5;
-  min-height: calc(100vh - 3.5rem);
-  max-width: 375px;
-  margin: 0 auto;
+  min-height: 100vh;
+  padding-top: 3.5rem;
+  font-family: "Montserrat", sans-serif;
 `;
 
 const ContentWrapper = styled.div`
-  padding: 0 16px 0 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
 `;
 
 const CustomHeaderContainer = styled.header`
@@ -144,114 +144,162 @@ function useOutsideClick(ref, handler) {
   }, [ref, handler]);
 }
 
-const MobileTableWrapper = styled.div`
-  width: 343px;
-  height: 488px;
-  background: #ffffff;
-  border-radius: 1.25rem;
-  padding: 1rem;
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
-
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  font-family: "Montserrat", sans-serif;
-  margin: 0 auto;
-`;
-
-const TableHeaderTop = styled.div`
+const TableTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
 `;
 
-const TableTitle = styled.h2`
-  font-family: "Montserrat", sans-serif;
+const TableTitle = styled.h1`
   font-weight: 700;
-  font-size: 1.5rem;
-  color: #000000;
+  font-size: 1.75rem;
   margin: 0;
+  color: #000;
 `;
 
 const NewExpenseButton = styled.button`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  font-family: "Montserrat", sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: #000000;
-  background: none;
+  padding: 6px 12px;
   border: none;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #333;
   cursor: pointer;
-  user-select: none;
-  padding: 0;
-  gap: 4px;
+  transition: background-color 0.2s ease;
 
-  &:hover,
-  &:focus-visible {
-    color: #3ea08f;
-    outline: none;
+  svg {
+    margin-right: 6px;
+    width: 16px;
+    height: 16px;
+    stroke: #333;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    background-color: #f4f5f6;
   }
 `;
 
-const FilterControlsWrapper = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: nowrap;
-`;
+// --- Мобильная таблица расходов ---
 
-const MobileTableHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0 0.5rem;
-  font-weight: 600;
-  font-size: clamp(0.55rem, 1vw, 0.75rem);
-  color: #999999;
-`;
-
-const MobileTableRowsContainer = styled.div`
+const TableWrapper = styled.div`
+  width: 100%;
+  background: #fff;
+  border-radius: 1.25rem;
+  padding: 16px 20px 20px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 16px;
+  font-size: 10px;
+  color: #000;
   overflow-y: auto;
 `;
 
-const MobileTableRow = styled.div`
+const TableHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  padding: 0.3rem 0.5rem;
-  border-top: 1px solid #eee;
-  font-size: clamp(0.55rem, 1vw, 0.7rem);
-  color: #000000;
-  line-height: 1.2;
-
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 4px;
+  color: #6b7280;
+  font-weight: 600;
 `;
 
-const MobileTableCell = styled.div`
-  flex-basis: ${(props) => props.width || "auto"};
-  flex-shrink: 1;
-  text-align: ${(props) => props.align || "left"};
-  padding: 0 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+const HeaderCell = styled.div`
+  &:nth-child(1) {
+    flex: 3;
+    text-align: left;
+  }
+  &:nth-child(2) {
+    flex: 2;
+    text-align: left;
+  }
+  &:nth-child(3) {
+    flex: 2;
+    text-align: center;
+  }
+  &:nth-child(4) {
+    flex: 2;
+    text-align: right;
+  }
 `;
 
-const Section = styled.div`
-  background: #ffffff;
-  border-radius: 1.25rem;
-  padding: 1rem;
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.25rem;
+const TableRow = styled.div`
+  display: flex;
+  height: 12px;
+  gap: 16px;
+  align-items: center;
+  font-weight: 400;
+  color: #000;
 `;
 
-// --- Компонент MainPageMobile ---
+const RowCell = styled.div`
+  &:nth-child(1) {
+    flex: 3;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &:nth-child(2) {
+    flex: 2;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &:nth-child(3) {
+    flex: 2;
+    text-align: center;
+  }
+  &:nth-child(4) {
+    flex: 2;
+    text-align: right;
+  }
+`;
+
+// Формат даты дд.мм.гггг
+const formatDate = (dateString) => {
+  const d = new Date(dateString);
+  if (isNaN(d)) return dateString;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+const ExpensesTableMobile = ({ expenses }) => (
+  <TableWrapper aria-label="Таблица расходов">
+    <TableHeader>
+      <HeaderCell>Описание</HeaderCell>
+      <HeaderCell>Категория</HeaderCell>
+      <HeaderCell>Дата</HeaderCell>
+      <HeaderCell>Сумма</HeaderCell>
+    </TableHeader>
+    {expenses.length === 0 ? (
+      <TableRow>
+        <RowCell colSpan={4} style={{ textAlign: "center" }}>
+          Нет данных
+        </RowCell>
+      </TableRow>
+    ) : (
+      expenses.map(({ id, description, categoryLabel, date, amount }) => (
+        <TableRow key={id}>
+          <RowCell title={description}>{description}</RowCell>
+          <RowCell title={categoryLabel}>{categoryLabel}</RowCell>
+          <RowCell>{formatDate(date)}</RowCell>
+          <RowCell>{amount.toLocaleString("ru-RU")} ₽</RowCell>
+        </TableRow>
+      ))
+    )}
+  </TableWrapper>
+);
 
 const MainPageMobile = ({
   expenses,
@@ -266,7 +314,6 @@ const MainPageMobile = ({
   onSubmit,
   onCancel,
 }) => {
-  // Состояние для открытия меню в шапке
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [selectedHeaderMenu, setSelectedHeaderMenu] = useState("my_expenses");
 
@@ -277,6 +324,13 @@ const MainPageMobile = ({
     setSelectedHeaderMenu(id);
     setHeaderMenuOpen(false);
     // Здесь можно добавить логику переключения между меню
+  };
+
+  const scrollToForm = () => {
+    const formSection = document.querySelector("#expense-form-section");
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
@@ -325,83 +379,28 @@ const MainPageMobile = ({
       {/* Основной контейнер */}
       <Container>
         <ContentWrapper>
-          {/* Таблица расходов */}
-          <MobileTableWrapper aria-label="Таблица расходов">
-            <TableHeaderTop>
-              <TableTitle>Мои расходы</TableTitle>
-              <NewExpenseButton
-                onClick={() => alert("Новый расход")}
-                aria-label="Добавить новый расход"
-                type="button"
-              >
-                <PlusIcon /> Новый расход
-              </NewExpenseButton>
-            </TableHeaderTop>
-
-            {/* Фильтры */}
-            <FilterControlsWrapper>
-              <FilterControls
-                key={`${filterCategory}-${sortBy}`}
-                filterCategory={filterCategory}
-                setFilterCategory={setFilterCategory}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-              />
-            </FilterControlsWrapper>
-
-            {/* Заголовок таблицы */}
-            <MobileTableHeader>
-              <MobileTableCell width="40%">Описание</MobileTableCell>
-              <MobileTableCell width="20%">Категория</MobileTableCell>
-              <MobileTableCell width="20%" align="center">
-                Дата
-              </MobileTableCell>
-              <MobileTableCell width="20%" align="right">
-                Сумма
-              </MobileTableCell>
-            </MobileTableHeader>
-
-            {/* Строки таблицы */}
-            {expenses.length === 0 ? (
-              <MobileTableRow>Нет данных</MobileTableRow>
-            ) : (
-              <MobileTableRowsContainer>
-                {expenses.map((expense) => (
-                  <MobileTableRow
-                    key={expense.id}
-                    active={expense.id === activeExpenseId}
-                    aria-selected={expense.id === activeExpenseId}
-                    tabIndex={0}
-                  >
-                    <MobileTableCell width="40%" title={expense.description}>
-                      {expense.description}
-                    </MobileTableCell>
-                    <MobileTableCell width="20%" title={expense.categoryLabel}>
-                      {expense.categoryLabel}
-                    </MobileTableCell>
-                    <MobileTableCell
-                      width="20%"
-                      align="center"
-                      title={expense.formattedDate}
-                    >
-                      {expense.formattedDate}
-                    </MobileTableCell>
-                    <MobileTableCell
-                      width="20%"
-                      align="right"
-                      title={`${expense.amount.toLocaleString("ru-RU")} ₽`}
-                    >
-                      {`${expense.amount.toLocaleString("ru-RU")} ₽`}
-                    </MobileTableCell>
-                  </MobileTableRow>
-                ))}
-              </MobileTableRowsContainer>
-            )}
-          </MobileTableWrapper>
-
-          {/* Форма добавления/редактирования */}
           <Section>
-            <ExpenseForm editData={editData} onSubmit={onSubmit} onCancel={onCancel} />
+            <TableTitleRow>
+              <TableTitle>Мои расходы</TableTitle>
+              <NewExpenseButton onClick={scrollToForm} aria-label="Новый расход">
+                <PlusIcon />
+                Новый расход
+              </NewExpenseButton>
+            </TableTitleRow>
+
+            <FilterControls
+              filterCategory={filterCategory}
+              setFilterCategory={setFilterCategory}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              isCompact
+            />
+
+            <ExpensesTableMobile expenses={expenses} />
+
+            <Section id="expense-form-section">
+              <ExpenseForm editData={editData} onSubmit={onSubmit} onCancel={onCancel} />
+            </Section>
           </Section>
         </ContentWrapper>
       </Container>
