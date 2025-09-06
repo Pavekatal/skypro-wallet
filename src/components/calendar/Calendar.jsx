@@ -21,7 +21,7 @@ import { AuthContext } from '../../context/AuthContext';
  * Календарь для выбора периода (месяц или год)
  * Позволяет выбрать диапазон дат или месяцев и сообщает выбранный период через onPeriodChange
  */
-const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
+const Calendar = ({ onPeriodChange, onTransactionsChange, onError, hideHeader = false }) => {
   // Режим отображения: 'month' — по дням, 'year' — по месяцам
   const [viewMode, setViewMode] = useState('month');
 
@@ -156,16 +156,19 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         const startVal = parseMonthKey(start, false);
         const endVal = parseMonthKey(end, true);
         console.log('POST period (year mode):', { start: startVal, end: endVal });
+        console.log('Selected months:', { start, end });
         getTransactionsPeriod({
           start: startVal,
           end: endVal
         }, token)
           .then(data => {
+            console.log('Received transactions data:', data);
             if (typeof onTransactionsChange === 'function') {
               onTransactionsChange(data);
             }
           })
             .catch(e => {
+              console.error('Error fetching transactions:', e);
               if (typeof onError === 'function') {
                 let msg = e && e.message ? e.message : 'Ошибка получения транзакций';
                 if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
@@ -187,9 +190,45 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
   return (
     <CalendarWrapper>
       {/* Заголовок и переключатель режима */}
-      <CalendarHeader>
-        <CalendarTitle>Период</CalendarTitle>
-        <ViewToggle>
+      {!hideHeader && (
+        <CalendarHeader>
+          <CalendarTitle>Период</CalendarTitle>
+          <ViewToggle>
+            <ToggleButton
+              $isActive={viewMode === 'month'}
+              onClick={() => {
+                setViewMode('month');
+                // Сброс диапазона при смене режима
+                setSelectedStartDay(null);
+                setSelectedEndDay(null);
+                setSelectedStartMonth(null);
+                setSelectedEndMonth(null);
+                updatePeriodLabel(null, null);
+              }}
+            >
+              Месяц
+            </ToggleButton>
+            <ToggleButton
+              $isActive={viewMode === 'year'}
+              onClick={() => {
+                setViewMode('year');
+                // Сброс диапазона при смене режима
+                setSelectedStartDay(null);
+                setSelectedEndDay(null);
+                setSelectedStartMonth(null);
+                setSelectedEndMonth(null);
+                updatePeriodLabel(null, null);
+              }}
+            >
+              Год
+            </ToggleButton>
+          </ViewToggle>
+        </CalendarHeader>
+      )}
+      
+      {/* Переключатель режима для модального окна */}
+      {hideHeader && (
+        <ViewToggle style={{ padding: '20px', justifyContent: 'center' }}>
           <ToggleButton
             $isActive={viewMode === 'month'}
             onClick={() => {
@@ -219,7 +258,7 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
             Год
           </ToggleButton>
         </ViewToggle>
-      </CalendarHeader>
+      )}
 
       {/* Вкладки месяцев и навигация по годам */}
       {viewMode === 'month' && (

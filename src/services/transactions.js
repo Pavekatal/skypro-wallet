@@ -124,6 +124,8 @@ export const getTransactionsPeriod = async (period, token) => {
   try {
     if (!token) throw new Error("Токен отсутствует");
 
+    console.log('API: requesting period data:', period);
+
     const response = await fetch(
       "https://wedev-api.sky.pro/api/transactions/period",
       {
@@ -149,8 +151,13 @@ export const getTransactionsPeriod = async (period, token) => {
       throw new Error(`Ошибка сервера: ${response.status}`);
     }
 
-    return await response.json();
+    const responseData = await response.json();
+    console.log('API: received response:', responseData);
+    
+    // Возвращаем массив транзакций, как в других функциях
+    return responseData.transactions || responseData || [];
   } catch (error) {
+    console.error('API: error fetching period data:', error);
     throw error.message || "Ошибка сервера";
   }
 };

@@ -13,13 +13,25 @@ export const DayCell = styled.div`
   justify-content: center;
   cursor: pointer;
   user-select: none;
+  font-size: 14px;
 
   &:hover {
     background: #e0f2e8;
+  }
+  
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 `;
 
 export const EmptyDayCell = styled.div`
   width: 35px;
   height: 35px;
+  
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+  }
 `;

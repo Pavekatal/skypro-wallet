@@ -61,17 +61,30 @@ function MonthView({ month, year, title, startDate, endDate, onDayClick }) {
 // --- Стили ---
 const MonthContainer = styled.div`
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 const MonthHeader = styled.div`
   font-weight: bold;
   margin-bottom: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
 `;
 
 const DaysGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+  
+  @media (max-width: 768px) {
+    gap: 4px;
+  }
 `;
 
 export default MonthView;

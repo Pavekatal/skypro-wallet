@@ -49,21 +49,38 @@ const ScrollContainer = styled.div`
   flex-grow: 1;
   overflow-y: auto;
   padding-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    padding-bottom: 16px;
+  }
 `;
 
 const YearBlock = styled.div`
   padding: 20px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
 const YearHeader = styled.h3`
   font-size: 16px;
   margin-bottom: 10px;
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
 `;
 
 const MonthsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
 `;
 
 const MonthCell = styled.div`
@@ -80,6 +97,11 @@ const MonthCell = styled.div`
   &:hover {
     background: #E0F2E8;
     color: #24A148;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px 0;
+    font-size: 13px;
   }
 `;
 
