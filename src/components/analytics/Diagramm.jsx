@@ -9,6 +9,7 @@ import {
   Legend,
 } from 'chart.js';
 import { useMemo } from 'react';
+import styled from 'styled-components';
 
 // Регистрируем необходимые модули Chart.js
 ChartJS.register(
@@ -19,6 +20,83 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
+// --- Стили ---
+const AnalyticsContainer = styled.div`
+  width: 789px;
+  height: 540px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    height: auto;
+    padding: 16px;
+    border-radius: 12px;
+    max-width: 100%;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: red;
+  font-weight: bold;
+  margin-bottom: 16px;
+  font-size: 18px;
+  text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+`;
+
+const TotalAmount = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  word-break: break-all;
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+`;
+
+const PeriodLabel = styled.div`
+  color: #666;
+  font-size: 14px;
+  
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
+`;
+
+const AmountContainer = styled.div`
+  margin-bottom: 16px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+`;
+
+const ChartContainer = styled.div`
+  height: calc(100% - 60px);
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background-color: white;
+  padding: 12px;
+  
+  @media (max-width: 768px) {
+    height: 250px;
+    padding: 8px;
+  }
+`;
 
 /**
  * Аналитика расходов за выбранный период
@@ -61,7 +139,9 @@ const Analytics = ({ period, transactions = [], error }) => {
 
   // Группировка расходов по категориям
   const categorySums = useMemo(() => {
+    console.log('Analytics: processing transactions:', transactions);
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+      console.log('Analytics: no transactions data');
       return Array(categories.length).fill(0);
     }
     const sums = Array(categories.length).fill(0);
@@ -72,12 +152,18 @@ const Analytics = ({ period, transactions = [], error }) => {
         sums[idx] += Number(t.sum) || 0;
       }
     });
+    console.log('Analytics: calculated sums:', sums);
     return sums;
   }, [transactions, categories]);
 
   // Максимальное значение для ограничения роста столбиков (80% высоты)
   const maxValue = useMemo(() => Math.max(...categorySums), [categorySums]);
-  const yMax = useMemo(() => maxValue > 0 ? maxValue / 0.87 : 10, [maxValue]);
+  const yMax = useMemo(() => {
+    if (maxValue <= 0) return 10;
+    // На мобильных устройствах делаем столбцы ниже
+    const isMobile = window.innerWidth <= 768;
+    return isMobile ? maxValue / 0.75 : maxValue / 0.87;
+  }, [maxValue]);
 
   // Сумма всех расходов
   const total = useMemo(() => categorySums.reduce((a, b) => a + b, 0), [categorySums]);
@@ -130,10 +216,19 @@ const Analytics = ({ period, transactions = [], error }) => {
       },
       x: {
         grid: { display: false },
-        ticks: { padding: 0 },
+        ticks: { 
+          padding: 0,
+          // Добавляем больше отступов снизу на мобильных
+          maxRotation: 0,
+          minRotation: 0,
+        },
       },
     },
-    layout: { padding: 0 },
+    layout: { 
+      padding: {
+        bottom: window.innerWidth <= 768 ? 20 : 0
+      }
+    },
     animation: { duration: 1000 },
   };
 
@@ -152,7 +247,9 @@ const Analytics = ({ period, transactions = [], error }) => {
       if (!chart.scales || !chart.scales.x || !chart.scales.y) return;
       const xScale = chart.scales.x;
       const yScale = chart.scales.y;
-      ctx.font = 'bold 16px Arial';
+      // Адаптивный размер шрифта для мобильных устройств
+      const isMobile = window.innerWidth <= 768;
+      ctx.font = isMobile ? 'bold 12px Arial' : 'bold 16px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.fillStyle = '#333';
@@ -163,7 +260,8 @@ const Analytics = ({ period, transactions = [], error }) => {
         try {
           const xPos = xScale.getPixelForValue(index);
           // Текст всегда над столбиком, но не выходит за пределы графика
-          const yPosRaw = yScale.getPixelForValue(value) - 30;
+          const offset = isMobile ? 20 : 30;
+          const yPosRaw = yScale.getPixelForValue(value) - offset;
           const yZero = yScale.getPixelForValue(0) - 8;
           const yPos = Math.max(Math.min(yPosRaw, yZero), top + 8);
           if (xPos >= left && xPos <= right && yPos >= top && yPos <= bottom) {
@@ -178,62 +276,31 @@ const Analytics = ({ period, transactions = [], error }) => {
 
   // --- UI ---
   return (
-    <div
-      style={{
-        width: '789px',
-        height: '540px',
-        padding: '20px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        backgroundColor: 'white',
-      }}
-    >
+    <AnalyticsContainer>
       {error && (
-        <div style={{
-          color: 'red',
-          fontWeight: 'bold',
-          marginBottom: '16px',
-          fontSize: '18px',
-          textAlign: 'center',
-        }}>
+        <ErrorMessage>
           {error === true
             ? 'Ошибка загрузки данных. Проверьте соединение с интернетом или попробуйте позже.'
             : error}
-        </div>
+        </ErrorMessage>
       )}
       {/* Сумма расходов и подпись периода */}
-      <div style={{ marginBottom: '16px' }}>
-        <div
-          style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
-            marginBottom: '4px',
-          }}
-        >
+      <AmountContainer>
+        <TotalAmount>
           {total.toLocaleString()} ₽
-        </div>
-        <div style={{ color: '#666', fontSize: '14px' }}>
+        </TotalAmount>
+        <PeriodLabel>
           {period
             ? `Расходы за ${period}`
             : 'Выберите период в календаре'}
-        </div>
-      </div>
+        </PeriodLabel>
+      </AmountContainer>
 
       {/* График расходов по категориям */}
-      <div
-        style={{
-          height: 'calc(100% - 60px)',
-          width: '100%',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          position: 'relative',
-          backgroundColor: 'white',
-          padding: '12px',
-        }}
-      >
+      <ChartContainer>
         <Bar data={chartData} options={chartOptions} plugins={[showValuesPlugin]} />
-      </div>
-    </div>
+      </ChartContainer>
+    </AnalyticsContainer>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   CalendarWrapper,
   CalendarHeader,
@@ -15,12 +15,13 @@ import { formatDate, formatMonth, formatMDY } from './dateUtils';
 import { WEEKDAYS_SHORT, MONTH_NAMES } from './constants/constant.js';
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md';
 import { getTransactionsPeriod } from '../../services/transactions.js';
+import { AuthContext } from '../../context/AuthContext';
 
 /**
  * Календарь для выбора периода (месяц или год)
  * Позволяет выбрать диапазон дат или месяцев и сообщает выбранный период через onPeriodChange
  */
-const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
+const Calendar = ({ onPeriodChange, onTransactionsChange, onError, hideHeader = false }) => {
   // Режим отображения: 'month' — по дням, 'year' — по месяцам
   const [viewMode, setViewMode] = useState('month');
 
@@ -36,6 +37,9 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-11
+
+  const { user } = useContext(AuthContext);
+  const token = user?.token;
 
   /**
    * Обработка клика по дню в режиме "месяц"
@@ -116,7 +120,7 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         getTransactionsPeriod({
           start: startVal,
           end: endVal
-        })
+        }, token)
           .then(data => {
             if (typeof onTransactionsChange === 'function') {
               onTransactionsChange(data);
@@ -152,16 +156,19 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         const startVal = parseMonthKey(start, false);
         const endVal = parseMonthKey(end, true);
         console.log('POST period (year mode):', { start: startVal, end: endVal });
+        console.log('Selected months:', { start, end });
         getTransactionsPeriod({
           start: startVal,
           end: endVal
-        })
+        }, token)
           .then(data => {
+            console.log('Received transactions data:', data);
             if (typeof onTransactionsChange === 'function') {
               onTransactionsChange(data);
             }
           })
             .catch(e => {
+              console.error('Error fetching transactions:', e);
               if (typeof onError === 'function') {
                 let msg = e && e.message ? e.message : 'Ошибка получения транзакций';
                 if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
@@ -183,9 +190,45 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
   return (
     <CalendarWrapper>
       {/* Заголовок и переключатель режима */}
-      <CalendarHeader>
-        <CalendarTitle>Период</CalendarTitle>
-        <ViewToggle>
+      {!hideHeader && (
+        <CalendarHeader>
+          <CalendarTitle>Период</CalendarTitle>
+          <ViewToggle>
+            <ToggleButton
+              $isActive={viewMode === 'month'}
+              onClick={() => {
+                setViewMode('month');
+                // Сброс диапазона при смене режима
+                setSelectedStartDay(null);
+                setSelectedEndDay(null);
+                setSelectedStartMonth(null);
+                setSelectedEndMonth(null);
+                updatePeriodLabel(null, null);
+              }}
+            >
+              Месяц
+            </ToggleButton>
+            <ToggleButton
+              $isActive={viewMode === 'year'}
+              onClick={() => {
+                setViewMode('year');
+                // Сброс диапазона при смене режима
+                setSelectedStartDay(null);
+                setSelectedEndDay(null);
+                setSelectedStartMonth(null);
+                setSelectedEndMonth(null);
+                updatePeriodLabel(null, null);
+              }}
+            >
+              Год
+            </ToggleButton>
+          </ViewToggle>
+        </CalendarHeader>
+      )}
+      
+      {/* Переключатель режима для модального окна */}
+      {hideHeader && (
+        <ViewToggle style={{ padding: '20px', justifyContent: 'center' }}>
           <ToggleButton
             $isActive={viewMode === 'month'}
             onClick={() => {
@@ -215,7 +258,7 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
             Год
           </ToggleButton>
         </ViewToggle>
-      </CalendarHeader>
+      )}
 
       {/* Вкладки месяцев и навигация по годам */}
       {viewMode === 'month' && (
@@ -236,53 +279,27 @@ const Calendar = ({ onPeriodChange, onTransactionsChange, onError }) => {
         </div>
       )}
 
-      {/* Вкладки месяцев */}
-      {viewMode === 'month' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
-          {MONTH_NAMES.map((name, idx) => (
-            <span
-              key={name}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 12,
-                background: idx === currentMonth ? '#CFF8E2' : '#F1F1F1',
-                color: idx === currentMonth ? '#24A148' : '#000',
-                fontWeight: idx === currentMonth ? 600 : 400,
-                cursor: 'pointer',
-                fontSize: 14,
-                minWidth: 60,
-                textAlign: 'center',
-                border: idx === currentMonth ? '1px solid #24A148' : '1px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onClick={() => setCurrentMonth(idx)}
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* В зависимости от режима — показываем дни или месяцы */}
       {viewMode === 'month' ? (
         <>
-          {/* Заголовки дней недели */}
+          {/* Фиксированные дни недели */}
           <WeekdaysHeader>
-            {WEEKDAYS_SHORT.map(day => (
-              <Weekday key={day}>{day}</Weekday>
+            {WEEKDAYS_SHORT.map((wd) => (
+              <Weekday key={wd}>{wd}</Weekday>
             ))}
           </WeekdaysHeader>
-
-          {/* Один месяц для выбора дат */}
-          <ScrollContainer>
-            <MonthView
-              month={currentMonth + 1}
-              year={currentYear}
-              title={`${MONTH_NAMES[currentMonth]} ${currentYear}`}
-              startDate={selectedStartDay}
-              endDate={selectedEndDay}
-              onDayClick={handleDayClick}
-            />
+          <ScrollContainer style={{ display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', maxHeight: 700 }}>
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <MonthView
+                key={idx}
+                month={idx + 1}
+                year={currentYear}
+                title={`${MONTH_NAMES[idx]} ${currentYear}`}
+                startDate={selectedStartDay}
+                endDate={selectedEndDay}
+                onDayClick={handleDayClick}
+              />
+            ))}
           </ScrollContainer>
         </>
       ) : (
